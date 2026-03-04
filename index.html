@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elite Trade Journal | Dashboard</title>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #131722; color: #d1d4dc; font-family: -apple-system, BlinkMacSystemFont, "Trebuchet MS", Roboto, Ubuntu, sans-serif; }
+        .tv-card { background: #1e222d; border: 1px solid #363a45; }
+    </style>
+</head>
+<body class="p-4">
+    <header class="mb-6 flex justify-between items-center">
+        <h1 class="text-xl font-bold text-white">Elite Journal</h1>
+        <span class="text-xs bg-green-900 text-green-400 px-2 py-1 rounded">BOT ACTIVE</span>
+    </header>
+
+    <div id="chart" class="w-full h-64 tv-card rounded-lg mb-6"></div>
+
+    <h2 class="text-sm font-semibold uppercase tracking-wider text-[#b2b5be] mb-3">Pending AI Signals</h2>
+    <div id="signals-list" class="space-y-4">
+        <div class="tv-card p-4 rounded-lg shadow-xl">
+            <div class="flex justify-between mb-2">
+                <span class="font-bold text-white">XAU/USD</span>
+                <span class="text-blue-400 text-xs font-mono">95% Confidence</span>
+            </div>
+            <div class="grid grid-cols-2 gap-4 text-sm mb-4">
+                <div><p class="text-gray-400">Entry</p><p class="text-white">2045.50</p></div>
+                <div><p class="text-gray-400">Target</p><p class="text-white text-green-400">2060.00</p></div>
+            </div>
+            <button class="w-full bg-[#2962ff] text-white py-2 rounded font-bold text-sm">Review on MT5</button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize TradingView Chart
+        const chart = LightweightCharts.createChart(document.getElementById('chart'), {
+            layout: { background: { color: '#1e222d' }, textColor: '#d1d4dc' },
+            grid: { vertLines: { color: '#2b2e3a' }, horzLines: { color: '#2b2e3a' } },
+            timeScale: { borderColor: '#363a45' }
+        });
+        const candleSeries = chart.addCandlestickSeries();
+        // Placeholder data
+        candleSeries.setData([
+            { time: '2026-03-01', open: 1.25, high: 1.26, low: 1.24, close: 1.255 },
+            { time: '2026-03-02', open: 1.255, high: 1.27, low: 1.25, close: 1.265 }
+        ]);
+    </script>
+</body>
+</html>
