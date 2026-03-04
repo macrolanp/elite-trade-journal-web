@@ -3,110 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Elite Trade Journal | Dashboard</title>
+    <title>Elite Trade Journal</title>
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #131722; color: #d1d4dc; font-family: -apple-system, sans-serif; overflow-x: hidden; }
-        .tv-card { background: #1e222d; border: 1px solid #363a45; }
-        /* This fix ensures the chart isn't 0px tall on mobile */
-        #chart-container { 
-            width: 100%; 
-            height: 400px; 
-            position: relative;
-        }
+        body { background-color: #131722; color: #d1d4dc; font-family: -apple-system, sans-serif; margin: 0; padding: 15px; }
+        .tv-card { background: #1e222d; border: 1px solid #363a45; border-radius: 8px; overflow: hidden; }
+        /* 2. Set a rock-solid height for mobile */
+        #chart-container { width: 100%; height: 350px; position: relative; }
     </style>
 </head>
-<body class="p-4">
-    <header class="mb-6 flex justify-between items-center">
-        <div>
-            <h1 class="text-xl font-bold text-white">Elite Journal</h1>
-            <p class="text-xs text-gray-500">Institutional Strategy Dashboard</p>
-        </div>
-        <span class="text-xs bg-green-900/30 text-green-400 border border-green-500/50 px-2 py-1 rounded-full animate-pulse">
-            ● BOT ACTIVE
-        </span>
+<body>
+    <header class="mb-4 flex justify-between items-center">
+        <h1 class="text-lg font-bold text-white">Elite Journal</h1>
+        <span class="text-[10px] bg-green-900/30 text-green-400 border border-green-500/50 px-2 py-1 rounded-full">● BOT ACTIVE</span>
     </header>
 
-    <div id="chart-container" class="tv-card rounded-lg overflow-hidden mb-6 shadow-2xl">
-        <div id="tv-chart" class="w-full h-full"></div>
-    </div>
-
-    <div class="flex justify-between items-center mb-3">
-        <h2 class="text-sm font-semibold uppercase tracking-widest text-[#b2b5be]">Pending AI Signals</h2>
-        <span class="text-[10px] text-gray-500">Updates every 10m</span>
+    <div id="chart-container" class="tv-card shadow-2xl mb-6">
+        <div id="tv-chart" style="width: 100%; height: 100%;"></div>
     </div>
 
     <div id="signals-list" class="space-y-4">
-        <div class="tv-card p-4 rounded-lg border-l-4 border-l-blue-500 shadow-lg">
-            <div class="flex justify-between items-start mb-3">
-                <div>
-                    <span class="text-lg font-bold text-white">GBP/USD</span>
-                    <p class="text-[10px] text-blue-400 font-mono">FVG GAP DETECTED</p>
-                </div>
-                <div class="text-right">
-                    <span class="bg-blue-500/10 text-blue-400 text-xs px-2 py-1 rounded border border-blue-500/20">95% Match</span>
-                </div>
+        <div class="tv-card p-4 border-l-4 border-l-blue-500">
+            <div class="flex justify-between items-start mb-2">
+                <span class="text-md font-bold text-white">GBP/USD</span>
+                <span class="bg-blue-500/10 text-blue-400 text-[10px] px-2 py-1 rounded">AI 95%</span>
             </div>
-            
-            <div class="grid grid-cols-2 gap-4 text-sm mb-4">
-                <div class="bg-[#2a2e39] p-2 rounded">
-                    <p class="text-[10px] text-gray-400 uppercase">Entry</p>
-                    <p class="text-white font-mono font-bold">1.26450</p>
-                </div>
-                <div class="bg-[#2a2e39] p-2 rounded">
-                    <p class="text-[10px] text-gray-400 uppercase">Take Profit</p>
-                    <p class="text-green-400 font-mono font-bold">1.27200</p>
-                </div>
+            <div class="grid grid-cols-2 gap-2 text-xs mb-3">
+                <div class="bg-[#2a2e39] p-2 rounded"><p class="text-gray-400">Entry</p><p class="text-white font-mono">1.26450</p></div>
+                <div class="bg-[#2a2e39] p-2 rounded"><p class="text-gray-400">Target</p><p class="text-green-400 font-mono">1.27200</p></div>
             </div>
-            
-            <button onclick="alert('Execute this on MT5 now!')" class="w-full bg-[#2962ff] hover:bg-[#1e48f1] text-white py-3 rounded-md font-bold text-sm transition-all active:scale-95">
-                EXECUTE ON MT5
-            </button>
+            <button class="w-full bg-[#2962ff] text-white py-3 rounded font-bold text-xs">EXECUTE ON MT5</button>
         </div>
     </div>
 
     <script>
-        // 1. Initialize Chart
-        const container = document.getElementById('tv-chart');
-        const chart = LightweightCharts.createChart(container, {
-            layout: { 
-                background: { color: '#1e222d' }, 
-                textColor: '#d1d4dc',
-                fontSize: 12
-            },
-            grid: { 
-                vertLines: { color: '#2b2e3a' }, 
-                horzLines: { color: '#2b2e3a' } 
-            },
-            rightPriceScale: { borderColor: '#363a45' },
-            timeScale: { borderColor: '#363a45', timeVisible: true },
-            handleScroll: true,
-            handleScale: true,
-        });
+        // 3. WAIT FOR THE PAGE TO LOAD FULLY BEFORE RUNNING
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('tv-chart');
+            if (!container) return;
 
-        // 2. Add Candlestick Series
-        const candleSeries = chart.addCandlestickSeries({
-            upColor: '#26a69a', downColor: '#ef5350', 
-            borderVisible: false, wickUpColor: '#26a69a', wickDownColor: '#ef5350'
-        });
+            // 4. Initialize Chart
+            const chart = LightweightCharts.createChart(container, {
+                width: container.clientWidth,
+                height: container.clientHeight,
+                layout: { background: { color: '#1e222d' }, textColor: '#d1d4dc' },
+                grid: { vertLines: { color: '#2b2e3a' }, horzLines: { color: '#2b2e3a' } },
+                timeScale: { borderColor: '#363a45' }
+            });
 
-        // 3. Sample Data (Bot will eventually replace this)
-        const data = [
-            { time: '2026-03-01', open: 1.2500, high: 1.2580, low: 1.2450, close: 1.2530 },
-            { time: '2026-03-02', open: 1.2530, high: 1.2650, low: 1.2520, close: 1.2610 },
-            { time: '2026-03-03', open: 1.2610, high: 1.2700, low: 1.2580, close: 1.2645 },
-            { time: '2026-03-04', open: 1.2645, high: 1.2680, low: 1.2620, close: 1.2660 }
-        ];
-        candleSeries.setData(data);
+            const candleSeries = chart.addCandlestickSeries({
+                upColor: '#26a69a', downColor: '#ef5350', borderVisible: false,
+                wickUpColor: '#26a69a', wickDownColor: '#ef5350'
+            });
 
-        // 4. Responsive Resize Fix
-        const resizeObserver = new ResizeObserver(entries => {
-            if (entries.length === 0) return;
-            const { width, height } = entries[0].contentRect;
-            chart.applyOptions({ width, height });
+            // 5. Hardcoded Data to test display
+            candleSeries.setData([
+                { time: '2026-03-01', open: 1.2500, high: 1.2580, low: 1.2450, close: 1.2530 },
+                { time: '2026-03-02', open: 1.2530, high: 1.2650, low: 1.2520, close: 1.2610 },
+                { time: '2026-03-03', open: 1.2610, high: 1.2700, low: 1.2580, close: 1.2645 },
+                { time: '2026-03-04', open: 1.2645, high: 1.2680, low: 1.2620, close: 1.2660 }
+            ]);
+
+            // 6. Handle Mobile Screen Rotation
+            window.addEventListener('resize', () => {
+                chart.applyOptions({ 
+                    width: container.clientWidth, 
+                    height: container.clientHeight 
+                });
+            });
         });
-        resizeObserver.observe(container);
     </script>
 </body>
 </html>
