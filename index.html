@@ -8,69 +8,63 @@
     <style>
         body { background-color: #131722; color: #d1d4dc; margin: 0; padding: 15px; font-family: sans-serif; }
         .card { background: #1e222d; border: 1px solid #363a45; border-radius: 12px; padding: 15px; margin-bottom: 20px; }
-        #tv-chart { width: 100%; height: 300px; background: #1e222d; border-radius: 8px; }
     </style>
 </head>
 <body>
-    <header class="flex justify-between items-center mb-6">
-        <h1 class="text-xl font-bold text-white">Elite Journal</h1>
-        <span class="text-[10px] text-green-400 font-bold border border-green-900 px-2 py-1 rounded">● BOT LIVE</span>
+    <header class="flex justify-between items-center mb-6 px-1">
+        <h1 class="text-xl font-bold text-white uppercase tracking-tighter">Elite Journal</h1>
+        <div class="flex items-center gap-2">
+            <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>
+            <span class="text-[10px] text-green-400 font-bold uppercase">Bot Active</span>
+        </div>
     </header>
 
     <div class="card border-l-4 border-l-blue-600 shadow-2xl">
-        <div class="flex justify-between mb-4">
+        <div class="flex justify-between items-center mb-4">
             <span class="text-lg font-bold text-white">GBP/USD</span>
-            <span class="bg-blue-900/50 text-blue-400 text-xs px-2 py-1 rounded">AI 95% CONFIDENCE</span>
+            <span class="bg-blue-900/40 text-blue-400 text-[10px] px-2 py-1 rounded border border-blue-500/20 font-bold">AI 95% MATCH</span>
         </div>
         
-        <div class="grid grid-cols-2 gap-4 mb-6">
-            <div class="bg-[#2a2e39] p-3 rounded">
-                <p class="text-[10px] text-gray-400 uppercase">Entry Price</p>
-                <p class="text-lg font-mono text-white">1.26450</p>
+        <div class="grid grid-cols-2 gap-3 mb-5">
+            <div class="bg-[#2a2e39] p-3 rounded-lg text-center">
+                <p class="text-[9px] text-gray-400 uppercase font-bold mb-1">Entry</p>
+                <p class="text-md font-mono text-white font-bold">1.26450</p>
             </div>
-            <div class="bg-[#2a2e39] p-3 rounded">
-                <p class="text-[10px] text-gray-400 uppercase">Take Profit</p>
-                <p class="text-lg font-mono text-green-400">1.27200</p>
+            <div class="bg-[#2a2e39] p-3 rounded-lg text-center">
+                <p class="text-[9px] text-gray-400 uppercase font-bold mb-1">Target</p>
+                <p class="text-md font-mono text-green-400 font-bold">1.27200</p>
             </div>
         </div>
 
-        <button onclick="alert('Proceed to MT5: GBPUSD Buy @ 1.26450')" 
-                class="w-full bg-blue-600 active:bg-blue-700 text-white py-4 rounded-xl font-bold shadow-lg transition-transform active:scale-95">
-            EXECUTE ON MT5
+        <button onclick="alert('Trade Signal: GBPUSD Buy at 1.26450. Opening MT5...')" 
+                class="w-full bg-[#2962ff] active:bg-[#1e48f1] text-white py-4 rounded-xl font-bold text-sm shadow-lg transition-all active:scale-95 uppercase tracking-widest">
+            Execute on MT5
         </button>
     </div>
 
-    <div class="card">
-        <p class="text-[10px] text-gray-500 mb-2 uppercase tracking-widest">Market Visualization</p>
-        <div id="tv-chart"></div>
+    <div class="card" style="height: 450px; padding: 0; overflow: hidden;">
+        <div id="tradingview_widget" style="height: 100%; width: 100%;"></div>
     </div>
 
-    <button onclick="location.reload()" class="w-full text-gray-600 text-[10px] uppercase font-bold py-4">
-        ↻ Force Refresh Data
-    </button>
+    <p class="text-center text-[9px] text-gray-600 uppercase tracking-widest mb-4">
+        Last Sync: Live Market Data
+    </p>
 
-    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
-    <script>
-        window.onload = function() {
-            const chartElement = document.getElementById('tv-chart');
-            if (!chartElement || typeof LightweightCharts === 'undefined') return;
-
-            const chart = LightweightCharts.createChart(chartElement, {
-                width: chartElement.offsetWidth,
-                height: 300,
-                layout: { background: { color: '#1e222d' }, textColor: '#d1d4dc' },
-                grid: { vertLines: { color: '#262b3e' }, horzLines: { color: '#262b3e' } },
-            });
-
-            const candleSeries = chart.addCandlestickSeries();
-            candleSeries.setData([
-                { time: '2026-03-01', open: 1.2500, high: 1.2580, low: 1.2450, close: 1.2530 },
-                { time: '2026-03-02', open: 1.2530, high: 1.2650, low: 1.2520, close: 1.2610 },
-                { time: '2026-03-03', open: 1.2610, high: 1.2700, low: 1.2580, close: 1.2645 },
-                { time: '2026-03-04', open: 1.2645, high: 1.2680, low: 1.2620, close: 1.2660 }
-            ]);
-        };
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <script type="text/javascript">
+        new TradingView.widget({
+            "autosize": true,
+            "symbol": "FX:GBPUSD",
+            "interval": "H1",
+            "timezone": "Etc/UTC",
+            "theme": "dark",
+            "style": "1",
+            "locale": "en",
+            "toolbar_bg": "#f1f3f6",
+            "enable_publishing": false,
+            "allow_symbol_change": true,
+            "container_id": "tradingview_widget"
+        });
     </script>
 </body>
-    </html>
-    
+</html>
