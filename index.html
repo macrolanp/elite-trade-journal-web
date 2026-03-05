@@ -3,46 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Elite Terminal | Live</title>
+    <title>Elite Terminal | Institutional</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* Forces the body to be exactly the height of the phone screen */
         body { background-color: #0B0E11; color: #d1d4dc; margin: 0; font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* FIX: Ensures TradingView has a container with actual height */
-        #tv-container { 
-            flex-grow: 1; 
-            width: 100%; 
-            position: relative; 
-            background: #000;
-            border-top: 1px solid #30363d;
-        }
+        /* Sidebar Logic */
+        #sidebar { transition: transform 0.3s ease; z-index: 100; background: #161B22; width: 260px; }
+        .sidebar-closed { transform: translateX(-260px); }
+        .sidebar-open { transform: translateX(0); }
+        
+        #tv-container { flex-grow: 1; position: relative; width: 100%; background: #000; }
+        .stat-card { background: #161B22; border: 1px solid #30363d; padding: 10px; border-radius: 8px; text-align: center; }
     </style>
 </head>
 <body>
 
-    <header class="h-14 border-b border-[#30363d] flex items-center px-4 justify-between bg-[#0B0E11] shrink-0">
-        <div class="flex items-center gap-2">
-            <span class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-            <span class="text-white font-bold italic uppercase text-xs tracking-tighter">Elite Journal</span>
+    <aside id="sidebar" class="fixed inset-y-0 left-0 sidebar-closed border-r border-[#30363d] p-5 flex flex-col shadow-2xl">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-white font-bold uppercase text-xs tracking-widest">Analytics</h2>
+            <button onclick="toggleSidebar()" class="text-gray-500 text-lg">✕</button>
         </div>
-        <div id="active-pair" class="text-[10px] font-mono text-gray-500 font-bold uppercase">Ready</div>
+        
+        <div class="grid grid-cols-2 gap-2 mb-6">
+            <div class="stat-card">
+                <p class="text-[8px] text-gray-500 font-bold">WIN RATE</p>
+                <p id="stat-win" class="text-green-400 font-bold">0%</p>
+            </div>
+            <div class="stat-card">
+                <p class="text-[8px] text-gray-500 font-bold">SIGNALS</p>
+                <p id="stat-count" class="text-white font-bold">0</p>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto">
+            <p class="text-[9px] text-gray-500 font-bold uppercase mb-3">Recent Activity</p>
+            <div id="signal-history" class="space-y-2 text-[10px]"></div>
+        </div>
+    </aside>
+
+    <header class="h-14 border-b border-[#30363d] flex items-center px-4 justify-between bg-[#0B0E11] shrink-0">
+        <div class="flex items-center gap-3">
+            <button onclick="toggleSidebar()" class="bg-[#161B22] p-2 rounded border border-[#30363d] text-blue-500">☰</button>
+            <span class="text-white font-black italic uppercase text-sm tracking-tighter">Elite Journal</span>
+        </div>
+        <div id="active-pair" class="text-[10px] font-mono text-gray-500 font-bold uppercase tracking-widest">Scanning...</div>
     </header>
 
-    <div class="p-3 bg-[#0D1117] shrink-0">
+    <div class="p-3 bg-[#0D1117] border-b border-[#30363d] shrink-0">
         <div class="grid grid-cols-2 gap-2 mb-3">
             <div class="bg-[#161B22] p-2 rounded border border-[#30363d] text-center">
-                <p class="text-[8px] text-gray-400 uppercase font-bold mb-1">Entry</p>
+                <p class="text-[8px] text-gray-500 uppercase font-bold">Entry</p>
                 <p id="entry-price" class="text-sm font-mono text-white">0.00000</p>
             </div>
             <div class="bg-[#161B22] p-2 rounded border border-[#30363d] text-center">
-                <p class="text-[8px] text-gray-400 uppercase font-bold mb-1">Take Profit</p>
+                <p class="text-[8px] text-gray-500 uppercase font-bold">Take Profit</p>
                 <p id="target-price" class="text-sm font-mono text-green-400">0.00000</p>
             </div>
         </div>
-        
-        <button onclick="alert('MT5 Execution Triggered')" class="w-full bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold py-3.5 rounded-lg uppercase tracking-widest shadow-lg active:scale-95 transition-all">
+        <button onclick="alert('MT5 Signal Sent')" class="w-full bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold py-3.5 rounded-lg uppercase tracking-widest shadow-lg active:scale-95 transition-all">
             Execute on MT5
         </button>
     </div>
@@ -51,17 +71,19 @@
         <div id="tv-widget" class="absolute inset-0"></div>
     </div>
 
-    <footer class="h-8 border-t border-[#30363d] bg-[#0B0E11] flex items-center px-4 shrink-0">
-        <div id="sys-log" class="text-[9px] text-blue-400 font-mono italic">Syncing with 'signals' table...</div>
-    </footer>
-
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script>
         const SUPABASE_URL = 'https://sktishfzpeenrtkmihwg.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNrdGlzaGZ6cGVlbnJ0a21paHdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2Mjg2NzYsImV4cCI6MjA4ODIwNDY3Nn0.QwVi1PzWDJcti3IdQjrLL-bLipKT8CTJNNHqpWFXLr4';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        function loadTradingView(symbol) {
+        function toggleSidebar() {
+            const s = document.getElementById('sidebar');
+            s.classList.toggle('sidebar-closed');
+            s.classList.toggle('sidebar-open');
+        }
+
+        function loadChart(symbol) {
             new TradingView.widget({
                 "autosize": true,
                 "symbol": symbol || "FX:EURUSD",
@@ -70,41 +92,41 @@
                 "style": "1",
                 "container_id": "tv-widget",
                 "hide_side_toolbar": true,
-                "allow_symbol_change": true,
-                "save_image": false
+                "allow_symbol_change": true
             });
         }
 
-        async function refreshSignal() {
-            // Updated to use lowercase 'signals' to match your DB dashboard
-            const { data, error } = await _supabase
-                .from('signals')
-                .select('*')
-                .order('id', { ascending: false })
-                .limit(1);
+        async function updateTerminal() {
+            // FIX: Using 'signals' (lowercase) to match your DB dashboard
+            const { data } = await _supabase.from('signals').select('*').order('id', { ascending: false });
+            
+            if (data && data.length > 0) {
+                const latest = data[0];
+                document.getElementById('active-pair').innerText = latest.pair.replace('FX:', '');
+                document.getElementById('entry-price').innerText = latest.entry;
+                document.getElementById('target-price').innerText = latest.target;
+                
+                // Update Sidebar Stats
+                const wins = data.filter(x => x.status === 'WIN').length;
+                document.getElementById('stat-win').innerText = ((wins / data.length) * 100).toFixed(0) + '%';
+                document.getElementById('stat-count').innerText = data.length;
 
-            if (data && data[0]) {
-                const s = data[0];
-                document.getElementById('active-pair').innerText = s.pair.replace('FX:', '');
-                document.getElementById('entry-price').innerText = s.entry;
-                document.getElementById('target-price').innerText = s.target;
-                document.getElementById('sys-log').innerText = `AI Signal: ${s.pair} Detected`;
-                loadTradingView(s.pair);
+                // Update Sidebar History
+                document.getElementById('signal-history').innerHTML = data.slice(0, 10).map(s => `
+                    <div class="p-2 border-b border-gray-800 flex justify-between">
+                        <span>${s.pair}</span>
+                        <span class="${s.status === 'WIN' ? 'text-green-500' : 'text-blue-400'}">${s.status || 'OPEN'}</span>
+                    </div>
+                `).join('');
+
+                loadChart(latest.pair);
             }
         }
 
-        // Realtime listener for the 'signals' table
-        _supabase.channel('db-sync')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'signals' }, refreshSignal)
-            .subscribe();
-
-        // Initial launch
-        refreshSignal();
+        _supabase.channel('signals-live').on('postgres_changes', { event: '*', schema: 'public', table: 'signals' }, updateTerminal).subscribe();
         
-        // Safety fallback: if no signal is found in 2 seconds, load EURUSD
-        setTimeout(() => {
-            if (!document.querySelector('iframe')) loadTradingView("FX:EURUSD");
-        }, 2000);
+        updateTerminal();
+        setTimeout(() => { if(!document.querySelector('iframe')) loadChart("FX:EURUSD"); }, 1500);
     </script>
 </body>
 </html>
