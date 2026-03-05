@@ -8,18 +8,25 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background-color: #0B0E11; color: #d1d4dc; margin: 0; font-family: 'Inter', sans-serif; overflow: hidden; }
+        
+        /* Sidebar Transitions */
         #sidebar { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 50; }
         .sidebar-closed { transform: translateX(-280px); }
         .sidebar-open { transform: translateX(0); }
+        
         #sidebar-trigger {
             position: absolute; right: -24px; top: 50%; transform: translateY(-50%);
             width: 24px; height: 80px; background: #161B22; border: 1px solid #30363d;
             border-left: none; border-radius: 0 8px 8px 0; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
         }
-        /* Custom scrollbar for Trade Log */
-        .log-container::-webkit-scrollbar { width: 3px; }
-        .log-container::-webkit-scrollbar-thumb { background: #30363d; border-radius: 10px; }
+
+        /* Custom scrollbar */
+        .custom-scroll::-webkit-scrollbar { width: 3px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #30363d; border-radius: 10px; }
+
+        /* Chart Area height fix */
+        #tv-widget-container { height: calc(100vh - 260px); width: 100%; position: relative; }
     </style>
 </head>
 <body class="flex h-screen">
@@ -29,8 +36,8 @@
 
         <div class="p-5 flex flex-col h-full gap-6">
             <header>
-                <h1 class="text-lg font-bold text-white uppercase tracking-widest">Analytics</h1>
-                <p class="text-[10px] text-gray-500 font-mono">SMC PERFORMANCE</p>
+                <h1 class="text-lg font-bold text-white uppercase tracking-widest italic">Analytics</h1>
+                <p class="text-[10px] text-gray-500 font-mono">SMC METRICS</p>
             </header>
 
             <div class="grid grid-cols-2 gap-2">
@@ -45,40 +52,51 @@
             </div>
 
             <div class="flex-1 flex flex-col min-h-0">
-                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-3">Recent History</p>
-                <div class="log-container flex-1 overflow-y-auto space-y-2 pr-1" id="trade-log">
-                    <p class="text-[10px] text-gray-600 italic">Fetching history...</p>
-                </div>
-            </div>
-
-            <div class="pt-4 border-t border-gray-800 flex items-center gap-2">
-                <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
-                <span class="text-[9px] text-gray-500 uppercase font-mono">Terminal V2.7</span>
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-3">Trade History</p>
+                <div id="trade-log" class="custom-scroll flex-1 overflow-y-auto space-y-2 pr-1 text-[10px]">
+                    </div>
             </div>
         </div>
     </aside>
 
-    <main class="flex-1 flex flex-col h-full overflow-hidden">
-        <header class="h-14 border-b border-[#30363d] flex items-center px-6 justify-between bg-[#0B0E11]">
-            <div class="flex items-center gap-6">
-                <div class="text-white font-black tracking-tighter text-xl italic uppercase">Elite Journal</div>
-                <div id="active-pair" class="text-sm font-mono text-gray-400 border-l border-gray-800 pl-6 uppercase">---</div>
+    <main class="flex-1 flex flex-col h-full">
+        <header class="h-14 border-b border-[#30363d] flex items-center px-6 justify-between">
+            <div class="flex items-center gap-4">
+                <span class="text-white font-black tracking-tighter text-xl italic uppercase">Elite Journal</span>
+                <span id="active-pair" class="text-sm font-mono text-gray-500 border-l border-gray-800 pl-4 uppercase">---</span>
             </div>
-            <div id="active-confidence" class="bg-blue-900/20 text-blue-400 text-[9px] px-2 py-1 rounded border border-blue-800/40 font-bold">SCANNING</div>
+            <div id="active-confidence" class="bg-blue-900/20 text-blue-400 text-[9px] px-2 py-1 rounded border border-blue-800/40 font-bold uppercase tracking-tighter">Scanning Markets</div>
         </header>
 
-        <div class="px-6 py-3 bg-[#0D1117] border-b border-[#30363d] flex gap-4">
-            <div class="flex-1 bg-[#161B22] p-2 rounded border border-[#30363d] text-center">
-                <p class="text-[8px] text-gray-500 uppercase font-bold">Entry</p>
-                <p id="entry-price" class="text-sm font-mono text-white">0.00000</p>
+        <div class="p-4 bg-[#0D1117] border-b border-[#30363d] flex flex-col gap-4 md:flex-row md:items-center">
+            <div class="flex flex-1 gap-2">
+                <div class="flex-1 bg-[#161B22] p-2 rounded border border-[#30363d] text-center">
+                    <p class="text-[8px] text-gray-500 uppercase font-bold mb-1">Entry Price</p>
+                    <p id="entry-price" class="text-sm font-mono text-white font-bold">0.00000</p>
+                </div>
+                <div class="flex-1 bg-[#161B22] p-2 rounded border border-[#30363d] text-center">
+                    <p class="text-[8px] text-gray-500 uppercase font-bold mb-1">Take Profit</p>
+                    <p id="target-price" class="text-sm font-mono text-green-400 font-bold">0.00000</p>
+                </div>
             </div>
-            <div class="flex-1 bg-[#161B22] p-2 rounded border border-[#30363d] text-center">
-                <p class="text-[8px] text-gray-500 uppercase font-bold">Target</p>
-                <p id="target-price" class="text-sm font-mono text-green-400">0.00000</p>
-            </div>
+            <button onclick="alert('Executing on Linked MT5 Account...')" class="md:w-48 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold py-3 rounded-lg uppercase tracking-widest transition-all active:scale-95 shadow-lg">
+                Execute on MT5
+            </button>
         </div>
 
-        <div class="flex-1 relative"><div id="tv-widget" class="absolute inset-0"></div></div>
+        <div id="tv-widget-container">
+            <div id="tv-widget" class="w-full h-full"></div>
+        </div>
+
+        <footer class="h-10 border-t border-[#30363d] bg-[#0B0E11] flex items-center px-4 overflow-hidden">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                    <span class="text-[9px] text-gray-500 font-bold uppercase tracking-widest">System:</span>
+                </div>
+                <div id="live-console" class="text-[9px] text-blue-400 font-mono italic">Initializing institutional scanner...</div>
+            </div>
+        </footer>
     </main>
 
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
@@ -95,6 +113,15 @@
             i.innerText = open ? '◀' : '▶';
         }
 
+        async function updateLiveLog(msg) {
+            const consoleEl = document.getElementById('live-console');
+            consoleEl.style.opacity = '0';
+            setTimeout(() => {
+                consoleEl.innerText = msg;
+                consoleEl.style.opacity = '1';
+            }, 200);
+        }
+
         async function refreshData() {
             const { data: signals } = await _supabase.from('Signal').select('*').order('id', { ascending: false });
             if (!signals) return;
@@ -106,32 +133,41 @@
             document.getElementById('stat-pf').innerText = losses > 0 ? (wins / losses).toFixed(2) : (wins > 0 ? '3.00+' : '0.00');
 
             // Update Trade Log
-            const logContainer = document.getElementById('trade-log');
-            logContainer.innerHTML = signals.slice(0, 10).map(s => `
+            document.getElementById('trade-log').innerHTML = signals.slice(0, 10).map(s => `
                 <div class="p-2 bg-[#0D1117] border border-gray-800 rounded flex justify-between items-center">
-                    <div>
-                        <p class="text-[10px] font-bold text-white">${s.pair.split(':')[1] || s.pair}</p>
-                        <p class="text-[8px] text-gray-500">${s.entry}</p>
-                    </div>
-                    <span class="text-[8px] font-black px-1.5 py-0.5 rounded ${
-                        s.status === 'WIN' ? 'bg-green-900/30 text-green-400' : 
-                        s.status === 'LOSS' ? 'bg-red-900/30 text-red-400' : 'bg-blue-900/30 text-blue-400'
-                    }">${s.status}</span>
+                    <span>${s.pair.replace('FX:', '')}</span>
+                    <span class="${s.status === 'WIN' ? 'text-green-400' : s.status === 'LOSS' ? 'text-red-400' : 'text-blue-400'} font-bold">${s.status}</span>
                 </div>
             `).join('');
 
-            // Update Main UI with latest
-            const latest = signals[0];
-            if (latest) {
-                document.getElementById('active-pair').innerText = latest.pair.replace('FX:', '').replace('OANDA:', '');
-                document.getElementById('entry-price').innerText = latest.entry;
-                document.getElementById('target-price').innerText = latest.target;
-                document.getElementById('active-confidence').innerText = `AI ${latest.confidence} MATCH`;
-                new TradingView.widget({"autosize": true, "symbol": latest.pair, "interval": "15", "theme": "dark", "container_id": "tv-widget", "style": "1"});
+            // Update Main View
+            const top = signals[0];
+            if (top) {
+                document.getElementById('active-pair').innerText = top.pair.replace('FX:', '').replace('OANDA:', '');
+                document.getElementById('entry-price').innerText = top.entry;
+                document.getElementById('target-price').innerText = top.target;
+                document.getElementById('active-confidence').innerText = `AI ${top.confidence} MATCH`;
+                updateLiveLog(`NEW SIGNAL DETECTED: ${top.pair} AT ${top.entry}`);
+                
+                new TradingView.widget({
+                    "autosize": true,
+                    "symbol": top.pair,
+                    "interval": "15",
+                    "theme": "dark",
+                    "container_id": "tv-widget",
+                    "style": "1"
+                });
             }
         }
 
-        _supabase.channel('db-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'Signal' }, refreshData).subscribe();
+        _supabase.channel('public:Signal').on('postgres_changes', { event: '*', schema: 'public', table: 'Signal' }, refreshData).subscribe();
+        
+        // Simulation of scanner activity in the footer
+        const statuses = ["Analyzing FVG on XAU/USD...", "Scanning M15 Liquidity...", "Syncing with Institutional Feed...", "Waiting for Market Structure Break..."];
+        setInterval(() => {
+            if (Math.random() > 0.7) updateLiveLog(statuses[Math.floor(Math.random() * statuses.length)]);
+        }, 5000);
+
         refreshData();
     </script>
 </body>
