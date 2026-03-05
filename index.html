@@ -8,14 +8,14 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background-color: #0B0E11; color: #d1d4dc; margin: 0; font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        
-        /* Sidebar Logic */
         #sidebar { transition: transform 0.3s ease; z-index: 100; background: #161B22; width: 260px; }
         .sidebar-closed { transform: translateX(-260px); }
         .sidebar-open { transform: translateX(0); }
-        
         #tv-container { flex-grow: 1; position: relative; width: 100%; background: #000; }
         .stat-card { background: #161B22; border: 1px solid #30363d; padding: 10px; border-radius: 8px; text-align: center; }
+        /* Custom Scrollbar for Logs */
+        #log-display::-webkit-scrollbar { width: 4px; }
+        #log-display::-webkit-scrollbar-thumb { background: #30363d; border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -51,6 +51,19 @@
         <div id="active-pair" class="text-[10px] font-mono text-gray-500 font-bold uppercase tracking-widest">Scanning...</div>
     </header>
 
+    <div class="p-3 bg-[#0B0E11] border-b border-[#30363d] shrink-0">
+        <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span class="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Live Scanner Log</span>
+            </div>
+            <span id="scan-time" class="text-[8px] text-gray-600 font-mono">--:--:--</span>
+        </div>
+        <div id="log-display" class="bg-black/40 p-3 rounded border border-[#161B22] h-20 overflow-y-auto font-mono text-[10px] text-blue-400">
+            <p class="text-gray-600">> Initializing SMC Engine...</p>
+        </div>
+    </div>
+
     <div class="p-3 bg-[#0D1117] border-b border-[#30363d] shrink-0">
         <div class="grid grid-cols-2 gap-2 mb-3">
             <div class="bg-[#161B22] p-2 rounded border border-[#30363d] text-center">
@@ -83,6 +96,20 @@
             s.classList.toggle('sidebar-open');
         }
 
+        // 🟢 NEW: LOGGING SYSTEM
+        function updateLog(message) {
+            const logDisplay = document.getElementById('log-display');
+            const timeSpan = document.getElementById('scan-time');
+            const now = new Date().toLocaleTimeString();
+            
+            timeSpan.innerText = now;
+            const entry = document.createElement('p');
+            entry.innerHTML = `<span class="text-gray-600">[${now}]</span> ${message}`;
+            logDisplay.prepend(entry);
+            
+            if (logDisplay.children.length > 15) logDisplay.lastChild.remove();
+        }
+
         function loadChart(symbol) {
             new TradingView.widget({
                 "autosize": true,
@@ -97,7 +124,6 @@
         }
 
         async function updateTerminal() {
-            // FIX: Using 'signals' (lowercase) to match your DB dashboard
             const { data } = await _supabase.from('signals').select('*').order('id', { ascending: false });
             
             if (data && data.length > 0) {
@@ -106,12 +132,10 @@
                 document.getElementById('entry-price').innerText = latest.entry;
                 document.getElementById('target-price').innerText = latest.target;
                 
-                // Update Sidebar Stats
                 const wins = data.filter(x => x.status === 'WIN').length;
                 document.getElementById('stat-win').innerText = ((wins / data.length) * 100).toFixed(0) + '%';
                 document.getElementById('stat-count').innerText = data.length;
 
-                // Update Sidebar History
                 document.getElementById('signal-history').innerHTML = data.slice(0, 10).map(s => `
                     <div class="p-2 border-b border-gray-800 flex justify-between">
                         <span>${s.pair}</span>
@@ -120,10 +144,15 @@
                 `).join('');
 
                 loadChart(latest.pair);
+                updateLog(`Analyzing structure on ${latest.pair}...`);
             }
         }
 
-        _supabase.channel('signals-live').on('postgres_changes', { event: '*', schema: 'public', table: 'signals' }, updateTerminal).subscribe();
+        // Real-time Listeners
+        _supabase.channel('signals-live').on('postgres_changes', { event: '*', schema: 'public', table: 'signals' }, (payload) => {
+            if(payload.eventType === 'INSERT') updateLog(`🔥 NEW SIGNAL: ${payload.new.pair}`);
+            updateTerminal();
+        }).subscribe();
         
         updateTerminal();
         setTimeout(() => { if(!document.querySelector('iframe')) loadChart("FX:EURUSD"); }, 1500);
