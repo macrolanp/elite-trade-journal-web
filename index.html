@@ -7,9 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background-color: #131722; color: #d1d4dc; margin: 0; padding: 15px; font-family: sans-serif; }
-        .card { background: #1e222d; border: 1px solid #363a45; border-radius: 12px; padding: 15px; margin-bottom: 20px; }
-        #chart-container { width: 100%; height: 420px; border-radius: 12px; overflow: hidden; border: 1px solid #363a45; }
+        body { background-color: #0B0E11; color: #d1d4dc; margin: 0; padding: 15px; font-family: sans-serif; }
+        .card { background: #161B22; border: 1px solid #30363d; border-radius: 12px; padding: 15px; margin-bottom: 20px; }
+        #chart-container { width: 100%; height: 420px; border-radius: 12px; overflow: hidden; border: 1px solid #30363d; }
     </style>
 </head>
 <body>
@@ -20,31 +20,45 @@
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
             </span>
-            <span class="text-[10px] text-green-400 font-bold uppercase" id="status-text">Live Syncing</span>
+            <span class="text-[10px] text-green-400 font-bold uppercase">Live Syncing</span>
         </div>
     </header>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div class="p-3 bg-[#161B22] border border-gray-800 rounded-lg">
+            <p class="text-gray-400 text-[10px] uppercase font-bold">Win Rate</p>
+            <h3 class="text-xl font-bold text-green-400" id="stat-winrate">0%</h3>
+        </div>
+        <div class="p-3 bg-[#161B22] border border-gray-800 rounded-lg">
+            <p class="text-gray-400 text-[10px] uppercase font-bold">Profit Factor</p>
+            <h3 class="text-xl font-bold text-white" id="stat-pf">0.00</h3>
+        </div>
+        <div class="p-3 bg-[#161B22] border border-gray-800 rounded-lg">
+            <p class="text-gray-400 text-[10px] uppercase font-bold">Signals</p>
+            <h3 class="text-xl font-bold text-blue-400" id="stat-total">0</h3>
+        </div>
+        <div class="p-3 bg-[#161B22] border border-gray-800 rounded-lg">
+            <p class="text-gray-400 text-[10px] uppercase font-bold">Active</p>
+            <h3 class="text-xl font-bold text-yellow-400" id="stat-active">0</h3>
+        </div>
+    </div>
 
     <div class="card border-l-4 border-l-blue-600 shadow-2xl">
         <div class="flex justify-between items-center mb-4">
             <span id="active-pair" class="text-lg font-bold text-white">---</span>
             <span id="active-confidence" class="bg-blue-900/40 text-blue-400 text-[10px] px-2 py-1 rounded font-bold uppercase">Waiting for AI...</span>
         </div>
-        
         <div class="grid grid-cols-2 gap-3 mb-5">
-            <div class="bg-[#2a2e39] p-3 rounded-lg text-center border border-[#363a45]">
+            <div class="bg-[#0D1117] p-3 rounded-lg text-center border border-[#30363d]">
                 <p class="text-[9px] text-gray-400 uppercase font-bold mb-1">Entry Price</p>
                 <p id="entry-price" class="text-md font-mono text-white font-bold">0.00000</p>
             </div>
-            <div class="bg-[#2a2e39] p-3 rounded-lg text-center border border-[#363a45]">
+            <div class="bg-[#0D1117] p-3 rounded-lg text-center border border-[#30363d]">
                 <p class="text-[9px] text-gray-400 uppercase font-bold mb-1">Take Profit</p>
                 <p id="target-price" class="text-md font-mono text-green-400 font-bold">0.00000</p>
             </div>
         </div>
-
-        <button onclick="alert('Proceeding to MT5 with latest signal')" 
-                class="w-full bg-[#2962ff] active:bg-[#1e48f1] text-white py-4 rounded-xl font-bold text-sm shadow-lg transition-all active:scale-95 uppercase tracking-widest">
-            Execute on MT5
-        </button>
+        <button onclick="alert('Executing institutional setup...')" class="w-full bg-[#2962ff] text-white py-4 rounded-xl font-bold text-sm shadow-lg uppercase tracking-widest">Execute on MT5</button>
     </div>
 
     <div id="chart-container">
@@ -53,53 +67,46 @@
 
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script>
-        // 2. SUPABASE CONFIGURATION
         const SUPABASE_URL = 'https://sktishfzpeenrtkmihwg.supabase.co'; 
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNrdGlzaGZ6cGVlbnJ0a21paHdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2Mjg2NzYsImV4cCI6MjA4ODIwNDY3Nn0.QwVi1PzWDJcti3IdQjrLL-bLipKT8CTJNNHqpWFXLr4'; // Replace this!
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNrdGlzaGZ6cGVlbnJ0a21paHdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2Mjg2NzYsImV4cCI6MjA4ODIwNDY3Nn0.QwVi1PzWDJcti3IdQjrLL-bLipKT8CTJNNHqpWFXLr4';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Function to update the UI
+        // --- NEW: Stats Logic ---
+        async function updateStats() {
+            const { data: signals } = await _supabase.from('Signal').select('status');
+            if (!signals) return;
+
+            const total = signals.length;
+            const wins = signals.filter(s => s.status === 'WIN').length;
+            const losses = signals.filter(s => s.status === 'LOSS').length;
+            const active = signals.filter(s => s.status === 'OPEN').length;
+
+            document.getElementById('stat-winrate').innerText = total > 0 ? ((wins / (wins + losses || 1)) * 100).toFixed(1) + '%' : '0%';
+            document.getElementById('stat-pf').innerText = losses > 0 ? (wins / losses).toFixed(2) : (wins > 0 ? '3.00+' : '0.00');
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-active').innerText = active;
+        }
+
         function updateUI(pair, entry, target, confidence) {
             document.getElementById('active-pair').innerText = pair.replace('FX:', '').replace('OANDA:', '');
             document.getElementById('entry-price').innerText = entry;
             document.getElementById('target-price').innerText = target;
             document.getElementById('active-confidence').innerText = `AI ${confidence} MATCH`;
-
-            new TradingView.widget({
-                "autosize": true,
-                "symbol": pair,
-                "interval": "60",
-                "timezone": "Etc/UTC",
-                "theme": "dark",
-                "style": "1",
-                "locale": "en",
-                "container_id": "tv-widget"
-            });
+            new TradingView.widget({"autosize": true, "symbol": pair, "interval": "60", "theme": "dark", "container_id": "tv-widget"});
         }
 
-        // 3. REALTIME LISTENER (Wait for new bot signals)
-        _supabase
-            .channel('public:signals')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'signals' }, payload => {
-                const s = payload.new;
-                updateUI(s.pair, s.entry, s.target, s.confidence);
+        _supabase.channel('public:Signal')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'Signal' }, () => {
+                updateStats(); // Refresh stats on any change
             })
             .subscribe();
 
-        // 4. INITIAL FETCH (Load most recent signal on startup)
-        async function fetchLatest() {
-            const { data, error } = await _supabase
-                .from('signals')
-                .select('*')
-                .order('id', { ascending: false })
-                .limit(1);
-
-            if (data && data[0]) {
-                const s = data[0];
-                updateUI(s.pair, s.entry, s.target, s.confidence);
-            }
+        async function init() {
+            updateStats();
+            const { data } = await _supabase.from('Signal').select('*').order('id', { ascending: false }).limit(1);
+            if (data?.[0]) updateUI(data[0].pair, data[0].entry, data[0].target, data[0].confidence);
         }
-        fetchLatest();
+        init();
     </script>
 </body>
 </html>
