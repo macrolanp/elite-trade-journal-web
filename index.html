@@ -6,86 +6,65 @@
     <title>Elite Terminal | Institutional</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #000000; color: #c9d1d9; margin: 0; font-family: 'JetBrains Mono', monospace; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        .panel { background: #0d1117; border: 1px solid #30363d; }
-        .data-label { font-size: 9px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.05em; }
-        .data-value { font-size: 14px; font-weight: bold; color: #e6edf3; }
-        #sidebar { transition: transform 0.2s ease-in-out; z-index: 100; background: #010409; width: 280px; border-right: 1px solid #30363d; }
-        .sidebar-closed { transform: translateX(-280px); }
-        .sidebar-open { transform: translateX(0); }
-        .blink { animation: blinker 1s linear infinite; }
-        @keyframes blinker { 50% { opacity: 0; } }
+        body { background-color: #0B0E11; color: #d1d4dc; margin: 0; font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         #lock-screen { position: fixed; inset: 0; background: black; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .stat-card { background: #161B22; border: 1px solid #30363d; padding: 10px; border-radius: 8px; text-align: center; }
+        #tv-container { flex-grow: 1; position: relative; width: 100%; background: #000; }
     </style>
 </head>
 <body>
 
     <div id="lock-screen">
-        <h1 class="text-red-500 font-bold mb-4 tracking-tighter">SECURE TERMINAL ACCESS REQUIRED</h1>
-        <button onclick="requestAccess()" class="border border-red-500 text-red-500 px-6 py-2 hover:bg-red-500 hover:text-white transition-all">INITIATE HANDSHAKE</button>
+        <h1 class="text-red-500 font-bold mb-4 tracking-tighter uppercase">Institutional Access Required</h1>
+        <button onclick="requestAccess()" class="border border-red-500 text-red-500 px-8 py-3 hover:bg-red-500 hover:text-white transition-all font-bold">INITIATE HANDSHAKE</button>
     </div>
 
-    <header class="h-12 border-b border-[#30363d] flex items-center px-4 justify-between bg-[#010409] shrink-0">
-        <div class="flex items-center gap-4">
-            <button onclick="toggleSidebar()" class="text-[#8b949e]">☰</button>
-            <span class="text-white font-bold text-xs uppercase tracking-widest">Elite Terminal <span class="text-blue-500">v2.1</span></span>
-        </div>
-        <div id="active-pair" class="text-[11px] font-bold text-[#8b949e] uppercase tracking-widest">AWAITING FEED</div>
+    <header class="h-14 border-b border-[#30363d] flex items-center px-4 justify-between bg-[#0B0E11] shrink-0">
+        <span class="text-white font-black italic uppercase text-sm">Elite Journal <span class="text-blue-500">Institutional</span></span>
+        <div id="active-pair" class="text-[10px] font-mono text-gray-500 font-bold uppercase tracking-widest">Awaiting Signal</div>
     </header>
 
-    <div class="panel flex justify-between items-center p-3 shrink-0 m-2 rounded-sm bg-[#0d1117]">
-        <div class="flex-1 border-r border-[#30363d] text-center px-2">
-            <p class="data-label">Entry</p>
-            <p id="entry-price" class="data-value text-yellow-400">0.00000</p>
+    <main class="p-3 flex-1 overflow-hidden flex flex-col gap-3">
+        <div class="grid grid-cols-2 gap-3">
+            <div class="stat-card">
+                <p class="text-[8px] text-gray-500 font-bold uppercase">Entry</p>
+                <p id="entry-price" class="text-lg font-mono text-white">0.00000</p>
+            </div>
+            <div class="stat-card">
+                <p class="text-[8px] text-gray-500 font-bold uppercase">Take Profit</p>
+                <p id="target-price" class="text-lg font-mono text-green-400">0.00000</p>
+            </div>
         </div>
-        <div class="flex-1 border-r border-[#30363d] text-center px-2">
-            <p class="data-label">Take Profit</p>
-            <p id="target-price" class="data-value text-green-400">0.00000</p>
+        
+        <div id="tv-container" class="rounded border border-[#30363d] overflow-hidden">
+            <div id="tv-widget" class="h-full w-full"></div>
         </div>
-        <div class="flex-1 text-center px-2">
-            <p class="data-label">Execution</p>
-            <p class="data-value text-blue-400 text-[10px]">MANUAL MT5</p>
-        </div>
-    </div>
-
-    <div class="px-2 pb-2 shrink-0">
-        <div class="panel bg-[#010409] p-2 relative h-24 flex flex-col justify-end overflow-hidden">
-            <div id="log-display" class="text-[9px] text-green-500 space-y-1 font-mono"></div>
-        </div>
-    </div>
-
-    <div id="tv-container" class="flex-1 relative border-t border-[#30363d]">
-        <div id="tv-widget" class="absolute inset-0"></div>
-    </div>
+    </main>
 
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script>
-        
-const S_URL = '___SUB_URL___'; 
-const S_KEY = '___SUB_KEY___';
-const S_PWD = '___SUB_PWD___';
+        const S_URL = '___SUB_URL___'; 
+        const S_KEY = '___SUB_KEY___';
+        const S_PWD = '___SUB_PWD___';
 
-function requestAccess() {
-    const input = prompt("ENTER ACCESS KEY:");
-    
-    if (S_PWD === '___SUB_PWD___') {
-        alert("SYSTEM ERROR: Handshake configuration missing."); // This is your current error
-        return;
-    }
+        function requestAccess() {
+            const input = prompt("ENTER ACCESS KEY:");
+            
+            if (S_PWD === '___SUB_PWD___') {
+                alert("SYSTEM ERROR: Handshake configuration missing.");
+                return;
+            }
 
-    if (input === S_PWD) {
-        sessionStorage.setItem('elite_auth', input);
-        document.getElementById('lock-screen').style.display = 'none';
-        initTerminal();
-    } else {
-        alert("ACCESS DENIED"); // This happens if the password is wrong
-    }
-}
-        
-        
-        if (sessionStorage.getItem('elite_auth') === S_PWD) {
+            if (input === S_PWD) {
+                sessionStorage.setItem('elite_auth', input);
+                document.getElementById('lock-screen').style.display = 'none';
+                initTerminal();
+            } else {
+                alert("ACCESS DENIED");
+            }
+        }
+        if (sessionStorage.getItem('elite_auth') === S_PWD && S_PWD !== '___SUB_PWD___') {
             document.getElementById('lock-screen').style.display = 'none';
             window.onload = initTerminal;
         }
@@ -93,8 +72,8 @@ function requestAccess() {
         function initTerminal() {
             const _supabase = supabase.createClient(S_URL, S_KEY);
             
-            async function refresh() {
-                const { data } = await _supabase.from('signals').select('*').order('id', { ascending: false });
+            async function updateTerminal() {
+                const { data } = await _supabase.from('signals').select('*').order('id', { ascending: false }).limit(1);
                 if (data && data.length > 0) {
                     const latest = data[0];
                     document.getElementById('active-pair').innerText = latest.pair.replace('FX:', '');
@@ -103,9 +82,7 @@ function requestAccess() {
                     new TradingView.widget({ "autosize": true, "symbol": latest.pair, "interval": "15", "theme": "dark", "container_id": "tv-widget" });
                 }
             }
-
-            _supabase.channel('live').on('postgres_changes', { event: '*', schema: 'public', table: 'signals' }, refresh).subscribe();
-            refresh();
+            updateTerminal();
         }
     </script>
 </body>
