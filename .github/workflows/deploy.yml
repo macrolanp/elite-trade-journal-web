@@ -18,12 +18,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-            - name: Inject Institutional Secrets
+      - name: Inject Institutional Secrets
         run: |
           sed -i "s/___SUB_URL___/${{ secrets.SUPABASE_URL }}/g" index.html
           sed -i "s/___SUB_KEY___/${{ secrets.SUPABASE_KEY }}/g" index.html
           sed -i "s/___SUB_PWD___/${{ secrets.TERMINAL_PWD }}/g" index.html
-          
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
@@ -34,4 +34,3 @@ jobs:
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
-        
