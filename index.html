@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Elite Terminal | Institutional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background-color: #0B0E11; color: #d1d4dc; margin: 0; font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        #lock-screen { position: fixed; inset: 0; background: black; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .panel { background: #161B22; border: 1px solid #30363d; padding: 10px; border-radius: 8px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div id="lock-screen">
+        <h1 class="text-red-500 font-bold mb-4 tracking-tighter uppercase">Institutional Access Required</h1>
+        <button onclick="requestAccess()" class="border border-red-500 text-red-500 px-8 py-3 hover:bg-red-500 hover:text-white transition-all font-bold">INITIATE HANDSHAKE</button>
+    </div>
+
+    <header class="h-14 border-b border-[#30363d] flex items-center px-4 justify-between bg-[#0B0E11] shrink-0">
+        <span class="text-white font-black italic uppercase text-sm">Elite Journal <span class="text-blue-500">Institutional</span></span>
+        <div id="active-pair" class="text-[10px] font-mono text-gray-500 font-bold uppercase tracking-widest">Awaiting Signal</div>
+    </header>
+
+    <main class="p-3 flex-1 overflow-hidden flex flex-col gap-3">
+        <div class="grid grid-cols-2 gap-3">
+            <div class="panel">
+                <p class="text-[8px] text-gray-500 font-bold uppercase">Entry</p>
+                <p id="entry-price" class="text-lg font-mono text-white">0.00000</p>
+            </div>
+            <div class="panel">
+                <p class="text-[8px] text-gray-500 font-bold uppercase">Take Profit</p>
+                <p id="target-price" class="text-lg font-mono text-green-400">0.00000</p>
+            </div>
+        </div>
+        
+        <div id="tv-container" class="flex-1 bg-black rounded border border-[#30363d] overflow-hidden">
+            <div id="tv-widget" class="h-full w-full"></div>
+        </div>
+    </main>
+
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <script>
+        // Placeholders for GitHub Injection
+        const S_URL = '___SUB_URL___'; 
+        const S_KEY = '___SUB_KEY___';
+        const S_PWD = '___SUB_PWD___';
+
+        function requestAccess() {
+            const input = prompt("ENTER ACCESS KEY:");
+            
+            // If the injection failed, S_PWD will still be the placeholder text
+            if (S_PWD === '___SUB_PWD___') {
+                alert("SYSTEM ERROR: Handshake configuration missing. Check GitHub Actions.");
+                return;
+            }
+
+            if (input === S_PWD) {
+                sessionStorage.setItem('elite_auth', input);
+                document.getElementById('lock-screen').style.display = 'none';
+                initTerminal();
+            } else {
+                alert("ACCESS DENIED");
+            }
+        }
+
+        // Auto-unlock logic
+        if (sessionStorage.getItem('elite_auth') === S_PWD && S_PWD !== '___SUB_PWD___') {
+            document.getElementById('lock-screen').style.display = 'none';
+            window.onload = initTerminal;
+        }
+
+        function initTerminal() {
+            const _supabase = supabase.createClient(S_URL, S_KEY);
+            
+            async function updateTerminal() {
+                const { data } = await _supabase.from('signals').select('*').order('id', { ascending: false }).limit(1);
+                if (data && data.length > 0) {
+                    const latest = data[0];
+                    document.getElementById('active-pair').innerText = latest.pair.replace('FX:', '');
+                    document.getElementById('entry-price').innerText = latest.entry;
+                    document.getElementById('target-price').innerText = latest.target;
+                    new TradingView.widget({ "autosize": true, "symbol": latest.pair, "interval": "15", "theme": "dark", "container_id": "tv-widget" });
+                }
+            }
+            updateTerminal();
+        }
+    </script>
+</body>
+</html>
