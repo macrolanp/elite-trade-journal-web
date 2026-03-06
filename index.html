@@ -62,22 +62,29 @@
 
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script>
-        // Placeholder strings - GitHub Action will replace these
-        const S_URL = '___SUPABASE_URL___';
-        const S_KEY = '___SUPABASE_KEY___';
-        const S_PWD = '___TERMINAL_PWD___';
+        
+const S_URL = '___SUPABASE_URL___';
+const S_KEY = '___SUPABASE_KEY___';
+const S_PWD = '___TERMINAL_PWD___';
 
-        function requestAccess() {
-            const input = prompt("ENTER ACCESS KEY:");
-            if (input === S_PWD) {
-                sessionStorage.setItem('elite_auth', input);
-                document.getElementById('lock-screen').style.display = 'none';
-                initTerminal();
-            } else {
-                alert("ACCESS DENIED");
-            }
-        }
+function requestAccess() {
+    const input = prompt("ENTER ACCESS KEY:");
+    
+    if (S_PWD === '___TERMINAL_PWD___') {
+        console.error("CRITICAL: Secret injection failed. The placeholder was not replaced.");
+        alert("SYSTEM ERROR: Handshake configuration missing.");
+        return;
+    }
 
+    if (input === S_PWD) {
+        sessionStorage.setItem('elite_auth', input);
+        document.getElementById('lock-screen').style.display = 'none';
+        initTerminal();
+    } else {
+        alert("ACCESS DENIED");
+    }
+}
+        
         if (sessionStorage.getItem('elite_auth') === S_PWD) {
             document.getElementById('lock-screen').style.display = 'none';
             window.onload = initTerminal;
