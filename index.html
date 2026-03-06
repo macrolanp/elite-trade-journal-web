@@ -63,16 +63,15 @@
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script>
         
-const S_URL = '___SUPABASE_URL___';
-const S_KEY = '___SUPABASE_KEY___';
-const S_PWD = '___TERMINAL_PWD___';
+const S_URL = '___SUB_URL___'; 
+const S_KEY = '___SUB_KEY___';
+const S_PWD = '___SUB_PWD___';
 
 function requestAccess() {
     const input = prompt("ENTER ACCESS KEY:");
     
-    if (S_PWD === '___TERMINAL_PWD___') {
-        console.error("CRITICAL: Secret injection failed. The placeholder was not replaced.");
-        alert("SYSTEM ERROR: Handshake configuration missing.");
+    if (S_PWD === '___SUB_PWD___') {
+        alert("SYSTEM ERROR: Handshake configuration missing."); // This is your current error
         return;
     }
 
@@ -81,9 +80,10 @@ function requestAccess() {
         document.getElementById('lock-screen').style.display = 'none';
         initTerminal();
     } else {
-        alert("ACCESS DENIED");
+        alert("ACCESS DENIED"); // This happens if the password is wrong
     }
 }
+        
         
         if (sessionStorage.getItem('elite_auth') === S_PWD) {
             document.getElementById('lock-screen').style.display = 'none';
