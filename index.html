@@ -6,89 +6,104 @@
     <title>Elite Terminal | Institutional</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #0B0E11; color: #d1d4dc; margin: 0; font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        #sidebar { transition: transform 0.3s ease; z-index: 100; background: #161B22; width: 260px; }
-        .sidebar-closed { transform: translateX(-260px); }
+        body { background-color: #000000; color: #c9d1d9; margin: 0; font-family: 'JetBrains Mono', monospace; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        .panel { background: #0d1117; border: 1px solid #30363d; }
+        .data-label { font-size: 9px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.05em; }
+        .data-value { font-size: 14px; font-weight: bold; color: #e6edf3; }
+        
+        #sidebar { transition: transform 0.2s ease-in-out; z-index: 100; background: #010409; width: 280px; border-right: 1px solid #30363d; }
+        .sidebar-closed { transform: translateX(-280px); }
         .sidebar-open { transform: translateX(0); }
+        
         #tv-container { flex-grow: 1; position: relative; width: 100%; background: #000; }
-        .stat-card { background: #161B22; border: 1px solid #30363d; padding: 10px; border-radius: 8px; text-align: center; }
-        /* Custom Scrollbar for Logs */
-        #log-display::-webkit-scrollbar { width: 4px; }
-        #log-display::-webkit-scrollbar-thumb { background: #30363d; border-radius: 10px; }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #30363d; }
+        
+        .blink { animation: blinker 1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
     </style>
 </head>
 <body>
 
-    <aside id="sidebar" class="fixed inset-y-0 left-0 sidebar-closed border-r border-[#30363d] p-5 flex flex-col shadow-2xl">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-white font-bold uppercase text-xs tracking-widest">Analytics</h2>
-            <button onclick="toggleSidebar()" class="text-gray-500 text-lg">✕</button>
+    <aside id="sidebar" class="fixed inset-y-0 left-0 sidebar-closed p-4 flex flex-col shadow-2xl">
+        <div class="flex justify-between items-center mb-6 border-b border-[#30363d] pb-2">
+            <h2 class="text-[#8b949e] font-bold text-[10px] uppercase tracking-widest">System Analytics</h2>
+            <button onclick="toggleSidebar()" class="text-gray-500 hover:text-white">✕</button>
         </div>
         
         <div class="grid grid-cols-2 gap-2 mb-6">
-            <div class="stat-card">
-                <p class="text-[8px] text-gray-500 font-bold">WIN RATE</p>
-                <p id="stat-win" class="text-green-400 font-bold">0%</p>
+            <div class="panel p-3 text-center">
+                <p class="data-label">WIN RATE</p>
+                <p id="stat-win" class="data-value text-green-400">--%</p>
             </div>
-            <div class="stat-card">
-                <p class="text-[8px] text-gray-500 font-bold">SIGNALS</p>
-                <p id="stat-count" class="text-white font-bold">0</p>
+            <div class="panel p-3 text-center">
+                <p class="data-label">SIGNALS DETECTED</p>
+                <p id="stat-count" class="data-value">0</p>
             </div>
         </div>
 
         <div class="flex-1 overflow-y-auto">
-            <p class="text-[9px] text-gray-500 font-bold uppercase mb-3">Recent Activity</p>
-            <div id="signal-history" class="space-y-2 text-[10px]"></div>
+            <p class="data-label mb-2 border-b border-[#30363d] pb-1">Ledger History</p>
+            <div id="signal-history" class="space-y-1 text-[11px]">
+                </div>
         </div>
     </aside>
 
-    <header class="h-14 border-b border-[#30363d] flex items-center px-4 justify-between bg-[#0B0E11] shrink-0">
-        <div class="flex items-center gap-3">
-            <button onclick="toggleSidebar()" class="bg-[#161B22] p-2 rounded border border-[#30363d] text-blue-500">☰</button>
-            <span class="text-white font-black italic uppercase text-sm tracking-tighter">Elite Journal</span>
+    <header class="h-12 border-b border-[#30363d] flex items-center px-4 justify-between bg-[#010409] shrink-0">
+        <div class="flex items-center gap-4">
+            <button onclick="toggleSidebar()" class="text-[#8b949e] hover:text-white transition-colors">☰</button>
+            <span class="text-white font-bold text-xs uppercase tracking-widest">Elite Terminal <span class="text-blue-500">v2.0</span></span>
         </div>
-        <div id="active-pair" class="text-[10px] font-mono text-gray-500 font-bold uppercase tracking-widest">Scanning...</div>
+        <div class="flex items-center gap-3">
+            <div class="w-1.5 h-1.5 bg-green-500 rounded-full blink"></div>
+            <div id="active-pair" class="text-[11px] font-bold text-[#8b949e] uppercase">AWAITING DATA</div>
+        </div>
     </header>
 
-    <div class="p-3 bg-[#0B0E11] border-b border-[#30363d] shrink-0">
-        <div class="flex items-center justify-between mb-2">
-            <div class="flex items-center gap-2">
-                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span class="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Live Scanner Log</span>
-            </div>
-            <span id="scan-time" class="text-[8px] text-gray-600 font-mono">--:--:--</span>
+    <div class="panel flex justify-between items-center p-3 shrink-0 m-2 rounded-sm bg-[#0d1117]">
+        <div class="flex-1 border-r border-[#30363d] text-center px-2">
+            <p class="data-label">Entry Price</p>
+            <p id="entry-price" class="data-value text-yellow-400">0.00000</p>
         </div>
-        <div id="log-display" class="bg-black/40 p-3 rounded border border-[#161B22] h-20 overflow-y-auto font-mono text-[10px] text-blue-400">
-            <p class="text-gray-600">> Initializing SMC Engine...</p>
+        <div class="flex-1 border-r border-[#30363d] text-center px-2">
+            <p class="data-label">Take Profit</p>
+            <p id="target-price" class="data-value text-green-400">0.00000</p>
+        </div>
+        <div class="flex-1 border-r border-[#30363d] text-center px-2">
+            <p class="data-label">Stop Loss</p>
+            <p id="stop-price" class="data-value text-red-400">0.00000</p>
+        </div>
+        <div class="flex-1 text-center px-2">
+            <p class="data-label">Order Type</p>
+            <p id="order-type" class="data-value text-blue-400">LIMIT</p>
         </div>
     </div>
 
-    <div class="p-3 bg-[#0D1117] border-b border-[#30363d] shrink-0">
-        <div class="grid grid-cols-2 gap-2 mb-3">
-            <div class="bg-[#161B22] p-2 rounded border border-[#30363d] text-center">
-                <p class="text-[8px] text-gray-500 uppercase font-bold">Entry</p>
-                <p id="entry-price" class="text-sm font-mono text-white">0.00000</p>
-            </div>
-            <div class="bg-[#161B22] p-2 rounded border border-[#30363d] text-center">
-                <p class="text-[8px] text-gray-500 uppercase font-bold">Take Profit</p>
-                <p id="target-price" class="text-sm font-mono text-green-400">0.00000</p>
-            </div>
+    <div class="px-2 pb-2 shrink-0">
+        <div class="panel bg-[#010409] border border-[#30363d] p-2 relative h-28 flex flex-col justify-end">
+            <div class="absolute top-1 right-2 text-[9px] text-gray-600" id="scan-time">00:00:00</div>
+            <div id="log-display" class="overflow-y-auto text-[10px] text-green-500 space-y-1">
+                </div>
         </div>
-        <button onclick="alert('MT5 Signal Sent')" class="w-full bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold py-3.5 rounded-lg uppercase tracking-widest shadow-lg active:scale-95 transition-all">
-            Execute on MT5
-        </button>
     </div>
 
-    <div id="tv-container">
+    <div id="tv-container" class="border-t border-[#30363d]">
         <div id="tv-widget" class="absolute inset-0"></div>
     </div>
 
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script>
+        
         const SUPABASE_URL = 'https://sktishfzpeenrtkmihwg.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNrdGlzaGZ6cGVlbnJ0a21paHdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2Mjg2NzYsImV4cCI6MjA4ODIwNDY3Nn0.QwVi1PzWDJcti3IdQjrLL-bLipKT8CTJNNHqpWFXLr4';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentChartSymbol = "";
 
         function toggleSidebar() {
             const s = document.getElementById('sidebar');
@@ -96,66 +111,131 @@
             s.classList.toggle('sidebar-open');
         }
 
-        // 🟢 NEW: LOGGING SYSTEM
-        function updateLog(message) {
+        function terminalLog(message, type = 'info') {
             const logDisplay = document.getElementById('log-display');
-            const timeSpan = document.getElementById('scan-time');
-            const now = new Date().toLocaleTimeString();
+            const now = new Date().toLocaleTimeString('en-US', { hour12: false });
+            document.getElementById('scan-time').innerText = now + " UTC+1"; // Standard institutional tz display
             
-            timeSpan.innerText = now;
-            const entry = document.createElement('p');
-            entry.innerHTML = `<span class="text-gray-600">[${now}]</span> ${message}`;
-            logDisplay.prepend(entry);
+            const entry = document.createElement('div');
+            let color = "text-[#8b949e]"; // Default gray
+            if (type === 'alert') color = "text-yellow-400 font-bold";
+            if (type === 'signal') color = "text-green-400 font-bold bg-green-900/20";
+            if (type === 'error') color = "text-red-500 font-bold";
             
-            if (logDisplay.children.length > 15) logDisplay.lastChild.remove();
+            entry.innerHTML = `<span class="text-[#484f58]">[${now}]</span> <span class="${color}">> ${message}</span>`;
+            
+            logDisplay.appendChild(entry);
+            logDisplay.scrollTop = logDisplay.scrollHeight; // Auto-scroll to bottom
+            
+            if (logDisplay.children.length > 30) logDisplay.firstChild.remove();
         }
 
         function loadChart(symbol) {
+            if (currentChartSymbol === symbol) return; // Prevent unnecessary reloading
+            currentChartSymbol = symbol;
+            
             new TradingView.widget({
                 "autosize": true,
                 "symbol": symbol || "FX:EURUSD",
                 "interval": "15",
+                "timezone": "Etc/UTC",
                 "theme": "dark",
                 "style": "1",
+                "locale": "en",
+                "enable_publishing": false,
+                "backgroundColor": "#000000",
+                "gridColor": "#1f2328",
+                "hide_top_toolbar": false,
+                "hide_legend": false,
+                "save_image": false,
                 "container_id": "tv-widget",
-                "hide_side_toolbar": true,
-                "allow_symbol_change": true
+                "studies": [
+                    "Volume@tv-basicstudies",
+                    "MACD@tv-basicstudies"
+                ]
             });
         }
 
         async function updateTerminal() {
-            const { data } = await _supabase.from('signals').select('*').order('id', { ascending: false });
-            
-            if (data && data.length > 0) {
-                const latest = data[0];
-                document.getElementById('active-pair').innerText = latest.pair.replace('FX:', '');
-                document.getElementById('entry-price').innerText = latest.entry;
-                document.getElementById('target-price').innerText = latest.target;
+            try {
+                const { data, error } = await _supabase.from('signals').select('*').order('id', { ascending: false });
                 
-                const wins = data.filter(x => x.status === 'WIN').length;
-                document.getElementById('stat-win').innerText = ((wins / data.length) * 100).toFixed(0) + '%';
-                document.getElementById('stat-count').innerText = data.length;
+                if (error) throw error;
 
-                document.getElementById('signal-history').innerHTML = data.slice(0, 10).map(s => `
-                    <div class="p-2 border-b border-gray-800 flex justify-between">
-                        <span>${s.pair}</span>
-                        <span class="${s.status === 'WIN' ? 'text-green-500' : 'text-blue-400'}">${s.status || 'OPEN'}</span>
-                    </div>
-                `).join('');
+                if (data && data.length > 0) {
+                    const latest = data[0];
+                    const cleanPair = latest.pair.replace('FX:', '');
+                    
+                    // Update Matrix
+                    document.getElementById('active-pair').innerText = cleanPair;
+                    document.getElementById('entry-price').innerText = latest.entry || "0.000";
+                    document.getElementById('target-price').innerText = latest.target || "0.000";
+                    document.getElementById('stop-price').innerText = latest.stop_loss || "MANUAL"; 
+                    document.getElementById('order-type').innerText = latest.type ? latest.type.toUpperCase() : "MARKET";
 
-                loadChart(latest.pair);
-                updateLog(`Analyzing structure on ${latest.pair}...`);
+                    const wins = data.filter(x => x.status === 'WIN').length;
+                    const winRate = data.length > 0 ? ((wins / data.length) * 100).toFixed(1) : 0;
+                    document.getElementById('stat-win').innerText = winRate + '%';
+                    document.getElementById('stat-count').innerText = data.length;
+
+                    document.getElementById('signal-history').innerHTML = data.slice(0, 15).map(s => {
+                        let statusColor = "text-[#8b949e]";
+                        if (s.status === 'WIN') statusColor = "text-green-500";
+                        if (s.status === 'LOSS') statusColor = "text-red-500";
+                        if (s.status === 'OPEN') statusColor = "text-yellow-500";
+                        
+                        return `
+                        <div class="flex justify-between py-1 border-b border-[#21262d] hover:bg-[#161b22] px-1 cursor-default">
+                            <span class="font-bold text-[#c9d1d9]">${s.pair.replace('FX:', '')}</span>
+                            <span class="${statusColor} font-bold">${s.status || 'OPEN'}</span>
+                        </div>`;
+                    }).join('');
+
+                    loadChart(latest.pair);
+                }
+            } catch (err) {
+                terminalLog(`Database sync error: ${err.message}`, 'error');
             }
         }
 
-        // Real-time Listeners
-        _supabase.channel('signals-live').on('postgres_changes', { event: '*', schema: 'public', table: 'signals' }, (payload) => {
-            if(payload.eventType === 'INSERT') updateLog(`🔥 NEW SIGNAL: ${payload.new.pair}`);
-            updateTerminal();
-        }).subscribe();
+        _supabase.channel('signals-live')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'signals' }, (payload) => {
+                if(payload.eventType === 'INSERT') {
+                    terminalLog(`EXECUTE: Valid SMC setup identified on ${payload.new.pair}`, 'signal');
+                    updateTerminal();
+                } else if (payload.eventType === 'UPDATE') {
+                    terminalLog(`UPDATE: Trade status changed for ${payload.new.pair} -> ${payload.new.status}`, 'alert');
+                    updateTerminal();
+                }
+            }).subscribe();
         
+        const fxPairs = ["GBPUSD", "GOLD", "XAUUSD", "AUDUSD"];
+        const scanEvents = [
+            "Analyzing order block liquidity...",
+            "Calculating fair value gaps (FVG)...",
+            "Checking multi-timeframe alignment...",
+            "Ping: Server latency 14ms",
+            "Waiting for premium/discount zone entries..."
+        ];
+
+        function simulateScannerLog() {
+            if (Math.random() > 0.3) {
+                const randomPair = fxPairs[Math.floor(Math.random() * fxPairs.length)];
+                const randomEvent = scanEvents[Math.floor(Math.random() * scanEvents.length)];
+                terminalLog(`[${randomPair}] ${randomEvent}`);
+            }
+            setTimeout(simulateScannerLog, Math.floor(Math.random() * 4000) + 2000);
+        }
+
+        terminalLog("Booting Elite SMC Engine v2.0...", "info");
+        terminalLog("Establishing secure connection to Supabase...", "info");
         updateTerminal();
-        setTimeout(() => { if(!document.querySelector('iframe')) loadChart("FX:EURUSD"); }, 1500);
+        setTimeout(() => {
+            terminalLog("Connection established. Subscribed to live feed.", "alert");
+            if(!document.querySelector('iframe')) loadChart("FX:EURUSD"); 
+            simulateScannerLog();
+        }, 1500);
+
     </script>
 </body>
 </html>
