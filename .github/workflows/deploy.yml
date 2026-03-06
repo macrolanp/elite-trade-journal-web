@@ -3,7 +3,7 @@ name: Institutional Deploy
 on:
   push:
     branches: ["main"]
-  workflow_dispatch: 
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,13 +18,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-            - name: Inject Institutional Secrets
+      - name: Inject Institutional Secrets
         run: |
-          # Use 'sed' with a safe delimiter to swap placeholders for GitHub Secrets
+          # The indentation here is critical: exactly 6 spaces from the left
           sed -i "s|___SUB_URL___|${{ secrets.SUPABASE_URL }}|g" index.html
           sed -i "s|___SUB_KEY___|${{ secrets.SUPABASE_KEY }}|g" index.html
           sed -i "s|___SUB_PWD___|${{ secrets.TERMINAL_PWD }}|g" index.html
-          
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
