@@ -1,21 +1,31 @@
-name: Secure Deploy
+name: Institutional Deploy
 
 on:
   push:
     branches: ["main"]
+  workflow_dispatch: 
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
+    environment: github-pages
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Inject Institutional Secrets
+      - name: Inject Secrets
         run: |
-          sed -i "s|___SUPABASE_URL___|${{ secrets.SUPABASE_URL }}|g" index.html
-          sed -i "s|___SUPABASE_KEY___|${{ secrets.SUPABASE_KEY }}|g" index.html
-          sed -i "s|___TERMINAL_PWD___|${{ secrets.TERMINAL_PWD }}|g" index.html
+          sed -i 's|___SUPABASE_URL___|${{ secrets.SUPABASE_URL }}|g' index.html
+          sed -i 's|___SUPABASE_KEY___|${{ secrets.SUPABASE_KEY }}|g' index.html
+          sed -i 's|___TERMINAL_PWD___|${{ secrets.TERMINAL_PWD }}|g' index.html
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
