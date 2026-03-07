@@ -3,55 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Elite Terminal | Private</title>
+    <title>Elite Terminal | Institutional</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #000; color: #c9d1d9; font-family: 'JetBrains Mono', monospace; height: 100vh; margin: 0; display: flex; flex-direction: column; overflow: hidden; }
+        /* YOUR ORIGINAL ELITE TERMINAL CSS */
+        body { background-color: #000000; color: #c9d1d9; margin: 0; font-family: 'JetBrains Mono', monospace; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        .panel { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px; }
+        .data-label { font-size: 9px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+        .data-value { font-size: 16px; font-weight: bold; color: #e6edf3; }
+        
+        /* SECURITY SCREENS */
+        .fullscreen-overlay { position: fixed; inset: 0; background: #010409; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         .hidden { display: none !important; }
-        .data-label { font-size: 9px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.05em; }
+        .input-field { background: #0d1117; border: 1px solid #30363d; color: white; padding: 12px; width: 100%; max-width: 300px; margin-bottom: 15px; font-family: 'JetBrains Mono'; font-size: 12px; outline: none; text-align: center; border-radius: 4px; }
+        .input-field:focus { border-color: #58a6ff; }
+        .btn-secure { background: transparent; border: 1px solid #58a6ff; color: #58a6ff; padding: 10px 24px; cursor: pointer; font-family: 'JetBrains Mono'; font-size: 12px; transition: 0.2s; text-transform: uppercase; border-radius: 4px; font-weight: bold; }
+        .btn-secure:hover { background: #58a6ff; color: #000; }
     </style>
 </head>
 <body>
 
-    <div id="setup-screen" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center p-6 hidden">
-        <h1 class="text-red-500 font-bold mb-2 tracking-widest">SYSTEM INITIALIZATION</h1>
-        <p class="text-[10px] text-gray-500 mb-8 text-center">LOCAL VAULT SETUP - KEYS NEVER LEAVE THIS DEVICE</p>
+    <div id="setup-screen" class="fullscreen-overlay hidden">
+        <h1 class="text-[#58a6ff] font-bold mb-2 tracking-widest text-lg">SYSTEM INITIALIZATION</h1>
+        <p class="text-[10px] text-[#8b949e] mb-8 text-center max-w-xs">ENCRYPTED LOCAL VAULT. KEYS NEVER LEAVE THIS DEVICE.</p>
         
-        <input id="in-url" type="text" placeholder="Supabase URL" class="mb-4 w-full max-w-sm p-3 bg-[#0d1117] border border-[#30363d] text-white text-xs focus:border-red-500 focus:outline-none">
-        <input id="in-key" type="password" placeholder="Supabase Anon Key" class="mb-4 w-full max-w-sm p-3 bg-[#0d1117] border border-[#30363d] text-white text-xs focus:border-red-500 focus:outline-none">
-        <input id="in-pwd" type="password" placeholder="Create Handshake Password" class="mb-8 w-full max-w-sm p-3 bg-[#0d1117] border border-[#30363d] text-white text-xs focus:border-red-500 focus:outline-none">
+        <input id="in-url" type="text" placeholder="Supabase URL" class="input-field">
+        <input id="in-key" type="password" placeholder="Supabase Anon Key" class="input-field">
+        <input id="in-pwd" type="password" placeholder="Create Access PIN" class="input-field mb-8 border-[#3fb950] focus:border-[#3fb950]">
         
-        <button onclick="saveSetup()" class="border border-red-500 text-red-500 px-6 py-2 text-sm hover:bg-red-500 hover:text-white transition-all">ENCRYPT & SAVE LOCALLY</button>
+        <button onclick="saveSetup()" class="btn-secure">INITIALIZE TERMINAL</button>
     </div>
 
-    <div id="lock-screen" class="fixed inset-0 bg-black z-40 flex flex-col items-center justify-center hidden">
-        <h1 class="text-red-500 font-bold mb-6 tracking-tighter">SECURE TERMINAL ACCESS REQUIRED</h1>
-        <input id="login-pwd" type="password" placeholder="ENTER ACCESS KEY" class="mb-6 text-center bg-transparent border-b border-red-500 text-white text-lg focus:outline-none pb-2">
-        <button onclick="requestAccess()" class="border border-red-500 text-red-500 px-6 py-2 hover:bg-red-500 hover:text-white transition-all">INITIATE HANDSHAKE</button>
-        <button onclick="resetVault()" class="mt-12 text-[10px] text-gray-700 hover:text-red-500 transition-all">FACTORY RESET TERMINAL</button>
+    <div id="lock-screen" class="fullscreen-overlay hidden">
+        <h1 class="text-[#8b949e] font-bold mb-6 tracking-widest text-sm">INSTITUTIONAL GATEWAY</h1>
+        <input id="login-pwd" type="password" placeholder="ENTER PIN" class="input-field mb-6 border-b-2 border-t-0 border-l-0 border-r-0 border-[#30363d] focus:border-[#58a6ff] bg-transparent text-xl">
+        <button onclick="requestAccess()" class="btn-secure">AUTHORIZE</button>
+        <button onclick="resetVault()" class="mt-16 text-[10px] text-[#484f58] hover:text-[#f85149] transition-all tracking-widest uppercase">Factory Reset</button>
     </div>
 
-    <header class="h-12 border-b border-[#30363d] flex items-center px-4 justify-between bg-[#010409] shrink-0">
-        <span class="text-white font-bold text-xs uppercase tracking-widest">Elite Terminal <span class="text-blue-500">v3.0</span></span>
-        <div id="active-pair" class="text-[11px] font-bold text-[#8b949e] uppercase tracking-widest">AWAITING FEED</div>
+    <header class="h-14 border-b border-[#30363d] flex items-center px-4 justify-between bg-[#010409] shrink-0">
+        <span class="text-[#e6edf3] font-bold text-sm tracking-widest">ELITE<span class="text-[#58a6ff]">TERMINAL</span></span>
+        <div class="flex items-center gap-2">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            <span id="active-pair" class="text-[11px] font-bold text-[#3fb950] tracking-widest">CONNECTED</span>
+        </div>
     </header>
 
-    <div class="flex justify-between items-center p-3 shrink-0 m-2 rounded-sm bg-[#0d1117] border border-[#30363d]">
-        <div class="flex-1 border-r border-[#30363d] text-center px-2">
-            <p class="data-label">Entry</p>
-            <p id="entry-price" class="text-yellow-400 font-bold text-sm">0.00000</p>
+    <main class="flex-1 flex flex-col p-2 gap-2 overflow-hidden bg-[#000000]">
+        <div class="grid grid-cols-2 gap-2 shrink-0">
+            <div class="panel">
+                <p class="data-label">Entry Price</p>
+                <p id="entry-price" class="data-value text-[#d29922]">0.00000</p>
+            </div>
+            <div class="panel">
+                <p class="data-label">Take Profit</p>
+                <p id="target-price" class="data-value text-[#3fb950]">0.00000</p>
+            </div>
         </div>
-        <div class="flex-1 text-center px-2">
-            <p class="data-label">Take Profit</p>
-            <p id="target-price" class="text-green-400 font-bold text-sm">0.00000</p>
-        </div>
-    </div>
 
-    <div id="tv-container" class="flex-1 relative border-t border-[#30363d]">
-        <div id="tv-widget" class="absolute inset-0"></div>
-    </div>
+        <div class="panel flex-1 p-0 overflow-hidden relative">
+            <div id="tv-widget" class="absolute inset-0"></div>
+        </div>
+    </main>
 
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script>
@@ -103,17 +121,29 @@
             const _supabase = supabase.createClient(url, key);
             
             async function refresh() {
-                const { data, error } = await _supabase.from('signals').select('*').order('id', { ascending: false });
+                const { data, error } = await _supabase.from('signals').select('*').order('id', { ascending: false }).limit(1);
                 if (error) { 
                     alert("DB ERROR: Invalid Supabase Keys. Please Factory Reset."); 
                     return; 
                 }
                 if (data && data.length > 0) {
                     const latest = data[0];
-                    document.getElementById('active-pair').innerText = latest.pair.replace('FX:', '');
+                    const symbol = latest.pair.replace('FX:', '');
+                    document.getElementById('active-pair').innerText = symbol;
                     document.getElementById('entry-price').innerText = latest.entry;
                     document.getElementById('target-price').innerText = latest.target;
-                    new TradingView.widget({ "autosize": true, "symbol": latest.pair, "interval": "15", "theme": "dark", "container_id": "tv-widget" });
+                    
+                    new TradingView.widget({ 
+                        "autosize": true, 
+                        "symbol": latest.pair, 
+                        "interval": "15", 
+                        "theme": "dark", 
+                        "style": "1",
+                        "hide_top_toolbar": true,
+                        "backgroundColor": "#0d1117",
+                        "gridColor": "#30363d",
+                        "container_id": "tv-widget" 
+                    });
                 }
             }
 
