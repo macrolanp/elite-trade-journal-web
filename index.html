@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Elite Terminal | Institutional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #000000; color: #c9d1d9; margin: 0; font-family: 'JetBrains Mono', monospace; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        .panel { background: #0d1117; border: 1px solid #30363d; border-radius: 4px; padding: 10px; }
+        .data-label { font-size: 8px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.1em; }
+        .data-value { font-size: 14px; font-weight: bold; color: #e6edf3; }
+        .fullscreen-overlay { position: fixed; inset: 0; background: #010409; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .hidden { display: none !important; }
+        input { background: #0d1117; border: 1px solid #30363d; padding: 12px; border-radius: 4px; color: white; margin-bottom: 15px; width: 100%; outline: none; font-size: 13px; text-align: center; }
+        input:focus { border-color: #58a6ff; }
+    </style>
+</head>
+<body>
+
+    <div id="setup-screen" class="fullscreen-overlay hidden">
+        <h2 class="text-[#58a6ff] text-xs tracking-[0.3em] mb-8 uppercase">System Initialization</h2>
+        <div class="w-full max-w-xs">
+            <input id="setup-url" type="text" placeholder="SUPABASE URL">
+            <input id="setup-key" type="password" placeholder="SUPABASE ANON KEY">
+            <input id="setup-pin" type="password" placeholder="CREATE ACCESS PIN">
+            <button onclick="saveSetup()" class="w-full py-3 bg-[#238636] text-white font-bold text-[10px] rounded uppercase tracking-widest hover:bg-[#2ea043]">Initialize Vault</button>
+        </div>
+    </div>
+
+    <div id="lock-screen" class="fullscreen-overlay hidden">
+        <h2 class="text-[#8b949e] text-[10px] tracking-[0.4em] mb-12 uppercase">Authorization Required</h2>
+        <input id="pin-input" type="password" placeholder="••••" class="bg-transparent border-b-2 border-t-0 border-x-0 border-[#30363d] text-center text-3xl outline-none mb-10 text-white !w-48 tracking-[0.5em] rounded-none focus:border-[#58a6ff]">
+        <button onclick="checkPin()" class="text-[10px] border border-[#58a6ff] text-[#58a6ff] px-12 py-3 hover:bg-[#58a6ff] hover:text-black transition-all font-bold tracking-widest">ENTER</button>
+        <div onclick="factoryReset()" class="mt-24 text-[8px] text-[#484f58] uppercase cursor-pointer hover:text-red-500 transition-colors">Emergency Factory Reset</div>
+    </div>
+
+    <header class="h-12 border-b border-[#30363d] flex items-center px-4 justify-between bg-[#010409]">
+        <span class="text-[10px] font-bold tracking-widest text-white italic">ELITE<span class="text-[#58a6ff] not-italic">TERMINAL</span></span>
+        <div class="flex items-center gap-2">
+            <div class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+            <span id="active-pair" class="text-[10px] text-[#3fb950] font-bold tracking-tighter">DATA LINK ACTIVE</span>
+        </div>
+    </header>
+
+    <main class="flex-1 p-2 flex flex-col gap-2 overflow-hidden bg-black">
+        <div class="grid grid-cols-3 gap-2 shrink-0">
+            <div class="panel text-center">
+                <p class="data-label">Entry</p>
+                <p id="entry-price" class="data-value text-[#d29922]">0.0000</p>
+            </div>
+            <div class="panel text-center">
+                <p class="data-label">Stop Loss</p>
+                <p id="stop-loss" class="data-value text-[#f85149]">0.0000</p>
+            </div>
+            <div class="panel text-center">
+                <p class="data-label">Target</p>
+                <p id="target-price" class="data-value text-[#3fb950]">0.0000</p>
+            </div>
+        </div>
+
+        <div class="panel h-24 overflow-y-auto bg-[#010409] border-[#30363d]">
+            <p class="text-[7px] text-[#8b949e] mb-1 sticky top-0 bg-[#010409] font-bold">LIVE SYSTEM LOGS</p>
+            <div id="log-content" class="text-[9px] text-[#58a6ff] font-light leading-relaxed">> System standby...</div>
+        </div>
+
+        <div class="panel flex-1 p-0 overflow-hidden relative border-[#30363d]">
+            <div id="tv-widget" class="absolute inset-0"></div>
+        </div>
+    </main>
+
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <script>
+        const S_URL = localStorage.getItem('SUB_URL');
+        const S_KEY = localStorage.getItem('SUB_KEY');
+        const S_PWD = localStorage.getItem('SUB_PWD');
+
+        function route() {
+            if (!S_URL || !S_KEY || !S_PWD) {
+                document.getElementById('setup-screen').classList.remove('hidden');
+            } else {
+                document.getElementById('lock-screen').classList.remove('hidden');
+            }
+        }
+
+        function saveSetup() {
+            const url = document.getElementById('setup-url').value.trim();
+            const key = document.getElementById('setup-key').value.trim();
+            const pin = document.getElementById('setup-pin').value.trim();
+            if(!url || !key || !pin) return alert("CRITICAL: All fields required.");
+            localStorage.setItem('SUB_URL', url);
+            localStorage.setItem('SUB_KEY', key);
+            localStorage.setItem('SUB_PWD', pin);
+            location.reload();
+        }
+
+        function factoryReset() {
+            if(confirm("DANGER: This will wipe all keys. Proceed?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        function checkPin() {
+            if(document.getElementById('pin-input').value === S_PWD) {
+                document.getElementById('lock-screen').classList.add('hidden');
+                initTerminal();
+            } else { alert("ACCESS DENIED"); }
+        }
+
+        function addLog(msg) {
+            const log = document.getElementById('log-content');
+            log.innerHTML += `<br>> ${msg}`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        async function initTerminal() {
+            const _supabase = supabase.createClient(S_URL, S_KEY);
+            addLog("Establishing connection to Supabase...");
+
+            async function refresh() {
+                const { data, error } = await _supabase.from('signals').select('*').order('id', { ascending: false }).limit(1);
+                
+                if (data && data.length > 0) {
+                    const s = data[0];
+                    document.getElementById('entry-price').innerText = s.entry;
+                    document.getElementById('stop-loss').innerText = s.stop_loss || '0.0000';
+                    document.getElementById('target-price').innerText = s.target;
+                    document.getElementById('active-pair').innerText = s.pair;
+                    
+                    addLog(`Received: ${s.pair} Signal`);
+
+                    new TradingView.widget({
+                        "autosize": true,
+                        "symbol": s.pair.includes(':') ? s.pair : `FX:${s.pair}`,
+                        "interval": "15",
+                        "theme": "dark",
+                        "container_id": "tv-widget",
+                        "backgroundColor": "#0d1117",
+                        "gridColor": "#30363d",
+                        "hide_top_toolbar": true,
+                        "style": "1"
+                    });
+                } else { addLog("Link established. Awaiting signal..."); }
+            }
+
+            _supabase.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'signals' }, refresh).subscribe();
+            refresh();
+        }
+
+        route();
+    </script>
+</body>
+</html>
