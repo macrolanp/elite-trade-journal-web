@@ -17,6 +17,8 @@
         .data-value { font-size: 14px; font-weight: bold; color: #e6edf3; }
         .fullscreen-overlay { position: fixed; inset: 0; background: #010409; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .hidden { display: none !important; }
+        #factory-reset-btn { cursor: pointer; color: #484f58; transition: color 0.2s; }
+        #factory-reset-btn:hover { color: #f85149; }
     </style>
 </head>
 <body>
@@ -25,14 +27,14 @@
         <h2 class="text-[#58a6ff] text-xs tracking-[0.3em] mb-8">SECURE ACCESS</h2>
         <input id="pin-input" type="password" placeholder="ENTER PIN" class="bg-transparent border-b border-[#30363d] text-center text-xl outline-none mb-6 text-white w-40">
         <button onclick="checkPin()" class="text-[10px] border border-[#58a6ff] text-[#58a6ff] px-8 py-2 hover:bg-[#58a6ff] hover:text-black transition-all">AUTHORIZE</button>
-        <button onclick="localStorage.clear(); location.reload();" class="mt-20 text-[8px] text-[#484f58] uppercase">Factory Reset</button>
+        <div id="factory-reset-btn" onclick="triggerReset()" class="mt-20 text-[8px] uppercase tracking-widest">Factory Reset</div>
     </div>
 
     <header class="h-12 border-b border-[#30363d] flex items-center px-4 justify-between bg-[#010409]">
         <span class="text-[10px] font-bold tracking-widest text-white">ELITE<span class="text-[#58a6ff]">TERMINAL</span> v3.0</span>
         <div class="flex items-center gap-2">
             <div class="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></div>
-            <span id="active-pair" class="text-[10px] text-[#3fb950] font-bold uppercase">CONNECTED</span>
+            <span id="active-pair" class="text-[10px] text-[#3fb950] font-bold uppercase">READY</span>
         </div>
     </header>
 
@@ -52,11 +54,9 @@
             </div>
         </div>
 
-        <div class="panel h-24 overflow-y-auto bg-[#010409]">
-            <p class="text-[8px] text-[#8b949e] mb-1 sticky top-0 bg-[#010409]">SYSTEM LOGS & PERFORMANCE</p>
-            <div id="log-content" class="text-[9px] text-[#58a6ff] leading-relaxed">
-                > Initializing institutional feed...
-            </div>
+        <div class="panel h-20 overflow-y-auto bg-[#010409]">
+            <p class="text-[8px] text-[#8b949e] mb-1 sticky top-0 bg-[#010409]">SYSTEM LOGS</p>
+            <div id="log-content" class="text-[9px] text-[#58a6ff] leading-relaxed">> Initializing feed...</div>
         </div>
 
         <div class="panel flex-1 p-0 overflow-hidden relative">
@@ -70,11 +70,23 @@
         const S_KEY = localStorage.getItem('SUB_KEY');
         const S_PWD = localStorage.getItem('SUB_PWD');
 
+        if(!S_URL) { window.location.href = "setup.html"; }
+
+        function triggerReset() {
+            if(confirm("WIPE ALL KEYS AND PIN?")) {
+                localStorage.clear();
+                window.location.href = "setup.html";
+            }
+        }
+
         function checkPin() {
-            if(document.getElementById('pin-input').value === S_PWD) {
+            const input = document.getElementById('pin-input').value;
+            if(input === S_PWD) {
                 document.getElementById('lock-screen').classList.add('hidden');
                 initTerminal();
-            } else { alert("ACCESS DENIED"); }
+            } else { 
+                alert("ACCESS DENIED"); 
+            }
         }
 
         function addLog(msg) {
@@ -83,40 +95,32 @@
             log.scrollTop = log.scrollHeight;
         }
 
-        async function initTerminal() {
-            if(!S_URL || !S_KEY) return;
+        function initTerminal() {
             const _supabase = supabase.createClient(S_URL, S_KEY);
             
             async function refresh() {
-                // 1. Fetch Performance Data
-                const { data: allSignals } = await _supabase.from('signals').select('status');
-                if (allSignals) {
-                    const wins = allSignals.filter(s => s.status === 'TP').length;
-                    const total = allSignals.length;
-                    const winRate = total > 0 ? ((wins / total) * 100).toFixed(1) : 0;
-                    addLog(`PERFORMANCE: ${winRate}% WR | ${total} TRADES`);
+                // Performance Check
+                const { data: perf } = await _supabase.from('signals').select('status');
+                if (perf) {
+                    const wins = perf.filter(s => s.status === 'TP').length;
+                    addLog(`STATS: ${wins} Successful Trades Detected`);
                 }
 
-                // 2. Fetch Latest Signal
+                // Main Signal Fetch
                 const { data, error } = await _supabase.from('signals').select('*').order('id', { ascending: false }).limit(1);
                 
-                if (error) {
-                    addLog("DATABASE ERROR: Check Supabase settings.");
-                    return;
-                }
-
                 if (data && data.length > 0) {
                     const s = data[0];
                     document.getElementById('active-pair').innerText = s.pair;
                     document.getElementById('entry-price').innerText = s.entry;
-                    document.getElementById('stop-loss').innerText = s.stop_loss || '0.0000';
+                    document.getElementById('stop-loss').innerText = s.stop_loss || 'N/A';
                     document.getElementById('target-price').innerText = s.target;
                     
-                    addLog(`ACTIVE SIGNAL: ${s.pair} @ ${s.entry}`);
+                    addLog(`Feed Active: ${s.pair}`);
 
                     new TradingView.widget({
                         "autosize": true,
-                        "symbol": s.pair.includes(':') ? s.pair : `FX:${s.pair}`,
+                        "symbol": s.pair,
                         "interval": "15",
                         "theme": "dark",
                         "style": "1",
@@ -126,15 +130,14 @@
                         "hide_top_toolbar": true
                     });
                 } else {
-                    addLog("WAITING FOR MARKET SIGNAL...");
+                    addLog("Awaiting Market Signal...");
                 }
             }
 
-            // Real-time listener
-            _supabase.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'signals' }, () => {
-                addLog("INCOMING DATA DETECTED...");
-                refresh();
-            }).subscribe();
+            _supabase.channel('changes').on('postgres_changes', 
+                { event: '*', schema: 'public', table: 'signals' }, 
+                () => { addLog("Update Received..."); refresh(); }
+            ).subscribe();
 
             refresh();
         }
