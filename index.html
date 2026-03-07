@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Elite Terminal | Institutional</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -17,23 +14,31 @@
         .data-value { font-size: 14px; font-weight: bold; color: #e6edf3; }
         .fullscreen-overlay { position: fixed; inset: 0; background: #010409; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .hidden { display: none !important; }
-        #reset-link { cursor: pointer; margin-top: 40px; color: #484f58; font-size: 10px; text-decoration: underline; }
+        input { background: #0d1117; border: 1px solid #30363d; padding: 10px; border-radius: 4px; color: white; margin-bottom: 12px; width: 100%; outline: none; font-size: 12px; }
     </style>
 </head>
 <body>
 
-    <div id="lock-screen" class="fullscreen-overlay">
+    <div id="setup-screen" class="fullscreen-overlay hidden px-8">
+        <h2 class="text-[#58a6ff] text-xs tracking-widest mb-6 uppercase">System Initialization</h2>
+        <input id="setup-url" type="text" placeholder="SUPABASE URL">
+        <input id="setup-key" type="password" placeholder="SUPABASE ANON KEY">
+        <input id="setup-pin" type="password" placeholder="CREATE ACCESS PIN">
+        <button onclick="saveSetup()" class="w-full py-3 bg-[#238636] text-white font-bold text-[10px] rounded uppercase">Save Configuration</button>
+    </div>
+
+    <div id="lock-screen" class="fullscreen-overlay hidden">
         <h2 class="text-[#58a6ff] text-xs tracking-[0.3em] mb-8">SECURE ACCESS</h2>
-        <input id="pin-input" type="password" placeholder="ENTER PIN" class="bg-transparent border-b border-[#30363d] text-center text-xl outline-none mb-6 text-white w-40">
+        <input id="pin-input" type="password" placeholder="ENTER PIN" class="bg-transparent border-b border-[#30363d] text-center text-xl outline-none mb-6 text-white !w-40">
         <button onclick="checkPin()" class="text-[10px] border border-[#58a6ff] text-[#58a6ff] px-8 py-2 hover:bg-[#58a6ff] hover:text-black transition-all">AUTHORIZE</button>
-        <div id="reset-link" onclick="factoryReset()">FACTORY RESET</div>
+        <div onclick="factoryReset()" class="mt-20 text-[8px] text-[#484f58] uppercase cursor-pointer underline">Factory Reset</div>
     </div>
 
     <header class="h-12 border-b border-[#30363d] flex items-center px-4 justify-between bg-[#010409]">
-        <span class="text-[10px] font-bold tracking-widest text-white">ELITE<span class="text-[#58a6ff]">TERMINAL</span></span>
+        <span class="text-[10px] font-bold tracking-widest text-white">ELITE<span class="text-[#58a6ff]">TERMINAL</span> v3.0</span>
         <div class="flex items-center gap-2">
             <div class="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></div>
-            <span id="active-pair" class="text-[10px] text-[#3fb950] font-bold">LIVE</span>
+            <span id="active-pair" class="text-[10px] text-[#3fb950] font-bold uppercase text-xs">READY</span>
         </div>
     </header>
 
@@ -65,9 +70,32 @@
 
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script>
-        const S_URL = localStorage.getItem('SUB_URL');
-        const S_KEY = localStorage.getItem('SUB_KEY');
-        const S_PWD = localStorage.getItem('SUB_PWD');
+        // Load keys from memory
+        let S_URL = localStorage.getItem('SUB_URL');
+        let S_KEY = localStorage.getItem('SUB_KEY');
+        let S_PWD = localStorage.getItem('SUB_PWD');
+
+        // Logic to decide which screen to show
+        function route() {
+            if (!S_URL || !S_KEY || !S_PWD) {
+                document.getElementById('setup-screen').classList.remove('hidden');
+            } else {
+                document.getElementById('lock-screen').classList.remove('hidden');
+            }
+        }
+
+        function saveSetup() {
+            const url = document.getElementById('setup-url').value.trim();
+            const key = document.getElementById('setup-key').value.trim();
+            const pin = document.getElementById('setup-pin').value.trim();
+
+            if(!url || !key || !pin) return alert("Fill all fields");
+
+            localStorage.setItem('SUB_URL', url);
+            localStorage.setItem('SUB_KEY', key);
+            localStorage.setItem('SUB_PWD', pin);
+            location.reload();
+        }
 
         function factoryReset() {
             if(confirm("Wipe all local keys and reset?")) {
@@ -90,10 +118,17 @@
         }
 
         async function initTerminal() {
-            if(!S_URL || !S_KEY) return;
             const _supabase = supabase.createClient(S_URL, S_KEY);
             
             async function refresh() {
+                // Fetch Performance Stats
+                const { data: allData } = await _supabase.from('signals').select('status');
+                if (allData) {
+                    const wins = allData.filter(s => s.status === 'TP').length;
+                    addLog(`PERFORMANCE: ${wins} wins recorded in database.`);
+                }
+
+                // Fetch Latest Signal
                 const { data, error } = await _supabase.from('signals').select('*').order('id', { ascending: false }).limit(1);
                 
                 if (data && data.length > 0) {
@@ -103,22 +138,28 @@
                     document.getElementById('target-price').innerText = s.target;
                     document.getElementById('active-pair').innerText = s.pair;
                     
-                    addLog(`DATA RECEIVED: ${s.pair}`);
+                    addLog(`LATEST SIGNAL: ${s.pair}`);
 
                     new TradingView.widget({
                         "autosize": true,
-                        "symbol": s.pair,
+                        "symbol": s.pair.includes(':') ? s.pair : `FX:${s.pair}`,
                         "interval": "15",
                         "theme": "dark",
-                        "container_id": "tv-widget"
+                        "style": "1",
+                        "container_id": "tv-widget",
+                        "backgroundColor": "#0d1117",
+                        "gridColor": "#30363d",
+                        "hide_top_toolbar": true
                     });
-                } else { addLog("AWAITING SIGNAL..."); }
+                } else { addLog("AWAITING MARKET FEED..."); }
             }
 
-            refresh();
             _supabase.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'signals' }, refresh).subscribe();
+            refresh();
         }
+
+        // Run router on load
+        route();
     </script>
 </body>
-  </html>
-  
+</html>
