@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal Setup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #010409; color: #c9d1d9; font-family: monospace; }
+        input { background: #0d1117; border: 1px solid #30363d; padding: 12px; border-radius: 4px; color: white; margin-bottom: 15px; width: 100%; outline: none; }
+        input:focus { border-color: #58a6ff; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-6">
+    <div class="max-w-md w-full border border-[#30363d] p-8 bg-[#0d1117] rounded-lg">
+        <h2 class="text-[#58a6ff] text-xs tracking-widest mb-6 uppercase">System Initialization</h2>
+        
+        <label class="text-[10px] text-[#8b949e] block mb-1">SUPABASE URL</label>
+        <input id="url" type="text" placeholder="https://your-project.supabase.co">
+
+        <label class="text-[10px] text-[#8b949e] block mb-1">SUPABASE ANON KEY</label>
+        <input id="key" type="password" placeholder="eyJhbGciOiJIUzI1NiI...">
+
+        <label class="text-[10px] text-[#8b949e] block mb-1">CREATE ACCESS PIN</label>
+        <input id="pin" type="password" placeholder="SET YOUR PIN">
+
+        <button onclick="save()" class="w-full py-3 bg-[#238636] text-white font-bold text-xs rounded hover:bg-[#2ea043] transition-colors">SAVE CONFIGURATION</button>
+    </div>
+
+    <script>
+        function save() {
+            const url = document.getElementById('url').value;
+            const key = document.getElementById('key').value;
+            const pin = document.getElementById('pin').value;
+
+            if(!url || !key || !pin) return alert("All fields required");
+
+            localStorage.setItem('SUB_URL', url.trim());
+            localStorage.setItem('SUB_KEY', key.trim());
+            localStorage.setItem('SUB_PWD', pin.trim());
+
+            alert("System Configured. Redirecting...");
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>
