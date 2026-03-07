@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Elite Terminal | Institutional</title>
     <link rel="manifest" href="manifest.json">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -33,7 +32,7 @@
         <span class="text-[10px] font-bold tracking-widest text-white">ELITE<span class="text-[#58a6ff]">TERMINAL</span> v3.0</span>
         <div class="flex items-center gap-2">
             <div class="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></div>
-            <span id="active-pair" class="text-[10px] text-[#3fb950] font-bold uppercase">READY</span>
+            <span id="active-pair" class="text-[10px] text-[#3fb950] font-bold uppercase">CONNECTED</span>
         </div>
     </header>
 
@@ -53,11 +52,10 @@
             </div>
         </div>
 
-        <div class="panel h-20 overflow-y-auto bg-[#010409]">
-            <p class="text-[8px] text-[#8b949e] mb-1 sticky top-0 bg-[#010409]">SYSTEM LOGS</p>
+        <div class="panel h-24 overflow-y-auto bg-[#010409]">
+            <p class="text-[8px] text-[#8b949e] mb-1 sticky top-0 bg-[#010409]">SYSTEM LOGS & PERFORMANCE</p>
             <div id="log-content" class="text-[9px] text-[#58a6ff] leading-relaxed">
-                > Initializing institutional feed...<br>
-                > Awaiting market signal...
+                > Initializing institutional feed...
             </div>
         </div>
 
@@ -72,11 +70,6 @@
         const S_KEY = localStorage.getItem('SUB_KEY');
         const S_PWD = localStorage.getItem('SUB_PWD');
 
-        // Initial setup check
-        if(!S_URL) {
-            window.location.href = "setup.html"; // Or redirect back to your setup logic
-        }
-
         function checkPin() {
             if(document.getElementById('pin-input').value === S_PWD) {
                 document.getElementById('lock-screen').classList.add('hidden');
@@ -90,51 +83,58 @@
             log.scrollTop = log.scrollHeight;
         }
 
-        function initTerminal() {
+        async function initTerminal() {
+            if(!S_URL || !S_KEY) return;
             const _supabase = supabase.createClient(S_URL, S_KEY);
             
             async function refresh() {
-    const { data: allSignals } = await _supabase.from('signals').select('*');
-    
-    if (allSignals) {
-        const wins = allSignals.filter(s => s.status === 'TP').length;
-        const total = allSignals.length;
-        const winRate = total > 0 ? ((wins / total) * 100).toFixed(1) : 0;
-        addLog(`Performance: ${winRate}% Win Rate | ${total} Trades Logged`);
-    }
+                // 1. Fetch Performance Data
+                const { data: allSignals } = await _supabase.from('signals').select('status');
+                if (allSignals) {
+                    const wins = allSignals.filter(s => s.status === 'TP').length;
+                    const total = allSignals.length;
+                    const winRate = total > 0 ? ((wins / total) * 100).toFixed(1) : 0;
+                    addLog(`PERFORMANCE: ${winRate}% WR | ${total} TRADES`);
+                }
 
-    const { data } = await _supabase.from('signals').select('*').order('id', { ascending: false }).limit(1);
-            }
-            
+                // 2. Fetch Latest Signal
+                const { data, error } = await _supabase.from('signals').select('*').order('id', { ascending: false }).limit(1);
                 
+                if (error) {
+                    addLog("DATABASE ERROR: Check Supabase settings.");
+                    return;
+                }
+
                 if (data && data.length > 0) {
                     const s = data[0];
                     document.getElementById('active-pair').innerText = s.pair;
                     document.getElementById('entry-price').innerText = s.entry;
-                    document.getElementById('stop-loss').innerText = s.stop_loss || 'N/A';
+                    document.getElementById('stop-loss').innerText = s.stop_loss || '0.0000';
                     document.getElementById('target-price').innerText = s.target;
                     
-                    addLog(`Signal detected: ${s.pair} at ${s.entry}`);
+                    addLog(`ACTIVE SIGNAL: ${s.pair} @ ${s.entry}`);
 
                     new TradingView.widget({
                         "autosize": true,
-                        "symbol": s.pair,
+                        "symbol": s.pair.includes(':') ? s.pair : `FX:${s.pair}`,
                         "interval": "15",
                         "theme": "dark",
                         "style": "1",
                         "container_id": "tv-widget",
                         "backgroundColor": "#0d1117",
-                        "gridColor": "#30363d"
+                        "gridColor": "#30363d",
+                        "hide_top_toolbar": true
                     });
                 } else {
-                    addLog("No active signals in database.");
+                    addLog("WAITING FOR MARKET SIGNAL...");
                 }
             }
 
-            _supabase.channel('schema-db-changes').on('postgres_changes', 
-                { event: '*', schema: 'public', table: 'signals' }, 
-                () => { addLog("Table update detected!"); refresh(); }
-            ).subscribe();
+            // Real-time listener
+            _supabase.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'signals' }, () => {
+                addLog("INCOMING DATA DETECTED...");
+                refresh();
+            }).subscribe();
 
             refresh();
         }
